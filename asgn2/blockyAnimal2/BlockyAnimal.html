@@ -4,17 +4,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Change a point color</title>
+    <title>Assignment 2: Blocky Animal</title>
   </head>
 
   <body onload="main()">
-    <canvas id="webgl" width="400" height="400">
+    <canvas id="webgl" width="800" height="800">
     Please use a browser that supports "canvas"
     </canvas>
 
     <p id="numdot"> XXX </p>
 
-    <button type=""button" id="green">X</button>
+    <!-- <button type=""button" id="green">X</button>
     <button type=""button" id="red">X</button>
 
     <button type="button" id="clearButton">X</button>
@@ -22,24 +22,56 @@
 
     <button type="button" id="pointButton">X</button>
     <button type="button" id="triButton">X</button>
-    <button type="button" id="circleButton">X</button>
+    <button type="button" id="circleButton">X</button> -->
+
+    <!-- <p>
+    X <input type="range" min="0" max="100" value="100" class="slider" id="redSlide">
+    <p> -->
 
     <p>
-    X <input type="range" min="0" max="100" value="100" class="slider" id="redSlide">
-    <p>
-    Magenta <input type="range" min="-45" max="45" value="0" class="slider" id="magentaSlide"> 
-    <button type="button" id="animationMagentaOnButton">ON</button>
-    <button type="button" id="animationMagentaOffButton">OFF</button>
+      Left Wing
+      <button type="button" id="animationLeftWingOnButton">ON</button>
+      <button type="button" id="animationLeftWingOffButton">OFF</button>
+
+      Joint 1: <input type="range" min="45" max="150" value="5" class="slider" id="leftWingJoint1">
+      Joint 2: <input type="range" min="-15" max="15" value="5" class="slider" id="leftWingJoint2">
+      Joint 3: <input type="range" min="-15" max="15" value="5" class="slider" id="leftWingJoint3">
+    </p>
     
     <p>
-    Yellow <input type="range" min="-45" max="45" value="0" class="slider" id="yellowSlide">
+      Right Wing
+      <button type="button" id="animationRightWingOnButton">ON</button>
+      <button type="button" id="animationRightWingOffButton">OFF</button>
 
-    Animation:
-    <button type="button" id="animationYellowOnButton">ON</button>
-    <button type="button" id="animationYellowOffButton">OFF</button>
+      Joint 1: <input type="range" min="225" max="315" value="5" class="slider" id="rightWingJoint1">
+      Joint 2: <input type="range" min="-15" max="15" value="5" class="slider" id="rightWingJoint2">
+      Joint 3: <input type="range" min="-15" max="15" value="5" class="slider" id="rightWingJoint3">
+    </p>
 
     <p>
-      Camera Angle <input type="range" min="0" max="90" value="5" class="slider" id="angleSlide">
+      Left Leg
+      <button type="button" id="animationLeftLegOnButton">ON</button>
+      <button type="button" id="animationLeftLegOffButton">OFF</button>
+
+      Joint 1: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint1">
+      Joint 2: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint2">
+      Joint 3: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint3">
+    </p>
+
+    <p>
+      Right Leg
+      <button type="button" id="animationRightLegOnButton">ON</button>
+      <button type="button" id="animationRightLegOffButton">OFF</button>
+
+      Joint 1: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint1">
+      Joint 2: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint2">
+      Joint 3: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint3">
+    </p>
+
+    <p>
+      Camera Angle X: <input type="range" min="0" max="360" value="5" class="slider" id="angleSlideX">
+    <p>
+      Camera Angle Y: <input type="range" min="0" max="360" value="5" class="slider" id="angleSlideY">
     <p>
 
     <script src="../lib/webgl-utils.js"></script>
@@ -50,6 +82,7 @@
     <script src="Circle.js"></script>
     <script src="Point.js"></script>
     <script src="Cube.js"></script>
+    <script src="Pyramid.js"></script>
     <script src="BlockyAnimal.js"></script>
   </body>
 </html>

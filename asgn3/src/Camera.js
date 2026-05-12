@@ -139,4 +139,22 @@ class Camera {
             this.projMat.setPerspective(this.fov, canvas.width/canvas.height, 0.1, 100);
         }
     }
+
+    moveUp() {
+        var v = new Vector3();
+        v.set(this.up);
+        v.normalize();
+        v.mul(this.speed);
+        this.eye.add(v);
+        this.at.add(v);
+    }
+
+    moveDown() {
+        var v = new Vector3();
+        v.set(this.up);
+        v.normalize();
+        v.mul(-this.speed);
+        this.eye.add(v);
+        this.at.add(v);
+    }
 }

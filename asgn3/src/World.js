@@ -72,22 +72,22 @@ let u_Sampler4;
 
 let g_mazeSize = 16;
 let g_maze = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [3,1,1,2,1,1,2,1,1,2,1,1,2,1,1,2],
   [1,0,0,1,0,0,0,0,1,0,0,1,0,0,0,1],
-  [1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,1],
-  [1,1,0,0,0,1,1,0,0,0,1,1,0,1,0,1],
+  [1,0,0,2,0,0,3,0,2,0,0,1,0,2,0,1],
+  [2,3,0,0,0,2,1,0,0,0,2,3,0,1,0,2],
   [1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
-  [1,0,1,1,1,1,0,1,1,1,0,1,1,1,0,1],
-  [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1],
-  [1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
+  [1,0,1,2,1,1,0,1,1,2,0,2,1,1,0,1],
+  [2,0,0,0,0,1,0,0,0,1,0,0,0,1,0,2],
+  [1,1,1,2,0,2,3,2,0,2,1,2,0,1,0,1],
   [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1],
-  [1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+  [2,0,0,1,1,2,0,2,1,1,0,2,1,1,0,2],
   [1,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1],
-  [1,0,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
-  [1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
-  [1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1],
+  [1,0,1,2,0,2,1,1,0,2,1,2,0,1,0,1],
+  [2,0,0,0,0,0,0,1,0,0,0,0,0,2,0,2],
+  [1,1,1,2,1,2,0,2,1,1,1,2,0,2,0,1],
   [1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [2,1,1,2,1,1,2,1,1,2,1,1,2,1,1,2],
 ];
 
 function setupWebGL() {
@@ -302,15 +302,20 @@ function main() {
 
   // Left Clicking, Right Clicking
   canvas.onmousedown = function(ev) {
+
+    if (ev.button === 0 && ev.ctrlKey) {
+      g_pokeAnimation = true;
+      g_pokeStartTime = g_seconds;
+      return;
+    }
+
     // Left click to delete
     if (ev.button === 0) {
-      // g_map[block.x][block.z] = 0;
       breakBlock();
     }
 
     // Right click to place
     if (ev.button === 2) {
-      // g_map[block.x][block.z] = 1;
       placeBlock();
     }
   };
@@ -402,7 +407,6 @@ var g_seconds = performance.now()/1000.0 - g_startTime;
 // Called by the browser repeatedly whenever its time
 function tick() {
   g_seconds = performance.now()/1000.0-g_startTime;
-  //console.log(g_seconds);
 
   // Update Animation Angles
   updateAnimationAngles();
@@ -410,7 +414,6 @@ function tick() {
 
   // Draw everything
   renderScene();
-  // renderAllShapes();
 
   // Tell the browser to update again when it has time
   requestAnimationFrame(tick);
@@ -521,11 +524,18 @@ function renderScene() {
   floor.matrix.translate(-.5, 0,   -.5);
   floor.renderFast();
 
+  var dirt = new Cube();
+  dirt.color = [0.75, 0.75, 0.75, 1];
+  dirt.textureNum = 2;
+  dirt.matrix.translate(0, -0.99, 0);
+  dirt.matrix.scale(16,0.01,16);
+  dirt.matrix.translate(-.5, 0,   -.5);
+  dirt.renderFast();
+
   // Draw Walls
   var wall = new Cube();
   wall.color = [0.75, 0.75, 0.75, 1];
   wall.textureNum = 3;
-  // wall.matrix.translate(-16, -1, -16);
 
   for (let i = 0; i < 3; i++) {   
     for (let x = 0; x < 32; x++) {
@@ -534,19 +544,15 @@ function renderScene() {
           wall.matrix.setIdentity()
           wall.matrix.translate(x - 16, i-1, z - 16);
           wall.renderFast();
-
         }
-        // wall.matrix.translate(0,0,1);
       }
-      // wall.matrix.translate(1,0,-32);
     }
-    // wall.matrix.translate(-32,1,0);
   }
 
   // Draw Maze
   drawMaze();
 
-  // renderAllShapes();
+  renderAllShapes();
 
   var duration = performance.now() - startTime;
   sendTextToHTML("ms: " + Math.floor(duration) + " fps: " + Math.floor(1000/duration), "performance");
@@ -606,8 +612,6 @@ function drawMaze() {
   let cube = new Cube();
   cube.textureNum = 4;
   cube.color = [0.4, 0.3, 0.2, 1];
-
-  // cube.matrix.translate(-8, -1, -8);
   
   for (let x = 0; x < g_maze.length; x++) {
     for (let z = 0; z < g_maze[0].length; z++) {
@@ -615,15 +619,12 @@ function drawMaze() {
       
       for (let y = 0; y < g_maze[x][z]; y++) {
         cube.matrix.setIdentity();
-        cube.matrix.translate ( x - g_maze.length / 2, y - 1, z - g_maze[x].length / 2 );
+        cube.matrix.translate ( x - g_maze.length / 2, y*0.5 -0.999, z - g_maze[x].length / 2 );
         cube.matrix.scale(1,0.5,1);
 
         cube.renderFast();
-        // cube.matrix.translate(0,1,0);
       }
-      // cube.matrix.translate(0,-g_maze[x][z],1);
     } 
-    // cube.matrix.translate(1,0,-16);
   }
 }
 
@@ -637,7 +638,9 @@ function renderAllShapes() {
   let lowerBody = new Cube();
   lowerBody.color = black;
   lowerBody.textureNum = -2;   
-  lowerBody.matrix.setTranslate(-0.25, -0.5, 0);
+  lowerBody.matrix.setTranslate(-6.6, -0.85, -5.5);
+  lowerBody.matrix.rotate(-90, 0,1,0);
+  lowerBody.matrix.scale(0.5,0.5,0.5);
   if (g_pokeAnimation) {
     lowerBody.matrix.translate(0.275, 0.35, 0.2); 
     lowerBody.matrix.rotate(g_bodySway, 0,0,1);
@@ -796,7 +799,6 @@ function renderAllShapes() {
   let rightThigh = new Cube();
   rightThigh.color = [0.9,0.9,0.9,1];
   rightThigh.matrix = new Matrix4(bodyLocationMat);
-  // rightThigh.matrix.setTranslate(-0.2, -0.6 + g_rightLegOffsetY, 0.1 + g_rightLegOffsetZ);
   rightThigh.matrix.translate(0.1, -0.1 + g_rightLegOffsetY, 0.1 + g_rightLegOffsetZ);
 
   rightThigh.matrix.rotate(g_rightLegAngle1, 1,0,0);
@@ -829,7 +831,6 @@ function renderAllShapes() {
   let leftThigh = new Cube();
   leftThigh.color = [0.9,0.9,0.9,1];
   leftThigh.matrix = new Matrix4(bodyLocationMat);
-  // leftThigh.matrix.translate(0.35, -0.1, 0.1);
   leftThigh.matrix.translate(0.35, -0.1 + g_leftLegOffsetY, 0.1 + g_leftLegOffsetZ);
   leftThigh.matrix.rotate(g_leftLegAngle1, 1, 0, 0);
 

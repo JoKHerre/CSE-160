@@ -8,57 +8,34 @@
   </head>
 
   <body onload="main()">
-    <canvas id="webgl" width="800" height="600">
+    <canvas id="webgl" width="600" height="400">
     Please use a browser that supports "canvas"
     </canvas>
 
     <p id="performance"> XXX </p>
-<!-- 
-    <p>
-      Left Wing
-      <button type="button" id="animationLeftWingOnButton">ON</button>
-      <button type="button" id="animationLeftWingOffButton">OFF</button>
 
-      Joint 1: <input type="range" min="45" max="150" value="5" class="slider" id="leftWingJoint1">
-      Joint 2: <input type="range" min="-15" max="15" value="5" class="slider" id="leftWingJoint2">
-      Joint 3: <input type="range" min="-15" max="15" value="5" class="slider" id="leftWingJoint3">
-    </p>
-    
-    <p>
-      Right Wing
-      <button type="button" id="animationRightWingOnButton">ON</button>
-      <button type="button" id="animationRightWingOffButton">OFF</button>
+    <h2>Can you find a lost penguin?</h2>
 
-      Joint 1: <input type="range" min="225" max="315" value="5" class="slider" id="rightWingJoint1">
-      Joint 2: <input type="range" min="-15" max="15" value="5" class="slider" id="rightWingJoint2">
-      Joint 3: <input type="range" min="-15" max="15" value="5" class="slider" id="rightWingJoint3">
-    </p>
+    <ul>
+      <li><strong>Left Click</strong> — Break block</li>
+      <li><strong>Right Click</strong> — Place block</li>
+      <li><strong>Ctrl + Left Click</strong> — Make penguin happy</li>
+      <li><strong>Mouse Move</strong> — Look around</li>
+      <li><strong>Mouse Wheel</strong> — Zoom in / out</li>
+    </ul>
 
-    <p>
-      Left Leg
-      <button type="button" id="animationLeftLegOnButton">ON</button>
-      <button type="button" id="animationLeftLegOffButton">OFF</button>
-
-      Joint 1: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint1">
-      Joint 2: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint2">
-      Joint 3: <input type="range" min="-30" max="30" value="5" class="slider" id="leftLegJoint3">
-    </p>
-
-    <p>
-      Right Leg
-      <button type="button" id="animationRightLegOnButton">ON</button>
-      <button type="button" id="animationRightLegOffButton">OFF</button>
-
-      Joint 1: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint1">
-      Joint 2: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint2">
-      Joint 3: <input type="range" min="-30" max="30" value="5" class="slider" id="rightLegJoint3">
-    </p>
-
-    <p>
-      Camera Angle X: <input type="range" min="0" max="360" value="5" class="slider" id="angleSlideX">
-    <p>
-      Camera Angle Y: <input type="range" min="0" max="360" value="5" class="slider" id="angleSlideY">
-    <p> -->
+    <ul>
+      <li><strong>W</strong> or <strong>Up Arrow</strong> — Move Forward</li>
+      <li><strong>S</strong> or <strong>Down Arrow</strong> — Move Backward</li>
+      <li><strong>A</strong> or <strong>Left Arrow</strong> — Move Left</li>
+      <li><strong>D</strong> or <strong>Right Arrow</strong> — Move Right</li>
+      <li><strong>Q</strong> — Pan Left</li>
+      <li><strong>E</strong> — Pan Right</li>
+      <li><strong>I</strong> — Look Up</li>
+      <li><strong>K</strong> — Look Down</li>
+      <li><strong>Space</strong> — Move Up</li>
+      <li><strong>Shift</strong> — Move Down</li>
+    </ul>
 
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>

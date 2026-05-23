@@ -1,0 +1,56 @@
+<!-- Jonathan Herrera -->
+<!-- jokherre@ucsc.edu -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Assignment 4: Lighting</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="600" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <p id="performance"> XXX </p>
+
+    <p>
+      <button type="button" id="normalOn">Normal On</button>
+      <button type="button" id="normalOff">Normal Off</button>
+
+    <h2>Can you find a lost penguin?</h2>
+
+    <ul>
+      <li><strong>Left Click</strong> — Break block</li>
+      <li><strong>Right Click</strong> — Place block</li>
+      <li><strong>Ctrl + Left Click</strong> — Make penguin happy</li>
+      <li><strong>Mouse Move</strong> — Look around</li>
+      <li><strong>Mouse Wheel</strong> — Zoom in / out</li>
+    </ul>
+
+    <ul>
+      <li><strong>W</strong> or <strong>Up Arrow</strong> — Move Forward</li>
+      <li><strong>S</strong> or <strong>Down Arrow</strong> — Move Backward</li>
+      <li><strong>A</strong> or <strong>Left Arrow</strong> — Move Left</li>
+      <li><strong>D</strong> or <strong>Right Arrow</strong> — Move Right</li>
+      <li><strong>Q</strong> — Pan Left</li>
+      <li><strong>E</strong> — Pan Right</li>
+      <li><strong>I</strong> — Look Up</li>
+      <li><strong>K</strong> — Look Down</li>
+      <li><strong>Space</strong> — Move Up</li>
+      <li><strong>Shift</strong> — Move Down</li>
+    </ul>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Point.js"></script>
+    <script src="Cube.js"></script>
+    <script src="Pyramid.js"></script>
+    <script src="Camera.js"></script>
+    <script src="World.js"></script>
+  </body>
+</html>

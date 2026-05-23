@@ -8,6 +8,7 @@ var VSHADER_SOURCE = `
   attribute vec3 a_Normal;
   varying vec2 v_UV;
   varying vec3 v_Normal;
+  varying vec4 v_VertPos;
   uniform mat4 u_ModelMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
@@ -16,6 +17,7 @@ var VSHADER_SOURCE = `
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
     v_Normal = a_Normal;
+    v_VertPos = u_ModelMatrix * a_Position;
     }`
 
 // Fragment shader program
@@ -24,6 +26,8 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   varying vec3 v_Normal;
   uniform vec4 u_FragColor;
+  uniform vec3 u_lightPos;
+  varying vec4 v_VertPos;
 
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
@@ -52,6 +56,14 @@ var FSHADER_SOURCE = `
     } else {
       gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);
     }
+
+    vec3 lightVector = vec3(v_VertPos) - u_lightPos;
+    float r = length(lightVector);
+    if (r < 1.0) {
+      gl_FragColor = vec4(1,0,0,1);
+    } else if (r < 2.0) {
+      gl_FragColor = vec4(0,1,0,1);
+    }
   }`
 
 // Global Variables
@@ -69,6 +81,7 @@ let u_GlobalRotateMatrix;
 let g_mouseDown = false;
 let g_camera;
 let g_normalOn = true;
+let g_lightPos = [0, 1, -2];
 
 let u_whichTexture;
 let u_Sampler0;
@@ -76,6 +89,7 @@ let u_Sampler1;
 let u_Sampler2;
 let u_Sampler3;
 let u_Sampler4;
+let u_lightPos;
 
 let g_mazeSize = 16;
 let g_maze = [
@@ -143,6 +157,13 @@ function connectVariablesToGLSL() {
   u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
   if (!u_FragColor) {
     console.log('Failed to get the storage location of u_FragColor');
+    return;
+  }
+
+  // Get the storage location of u_lightPos
+  u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
+  if (!u_lightPos) {
+    console.log('Failed to get the storage location of u_lightPos');
     return;
   }
 
@@ -253,10 +274,18 @@ let g_bodySway = 0;
 let g_pokeAnimation = false;
 let g_pokeStartTime = 0;
 
+
+
 // Set up actions for the HTML UI elements
 function addActionsforHtmlUI() {
   document.getElementById('normalOn').onclick = function() {g_normalOn = true;}
   document.getElementById('normalOff').onclick = function() {g_normalOn = false;}
+
+
+  document.getElementById('lightSlideX').addEventListener('mousemove', function(ev) {if (ev.buttons === 1) { g_lightPos[0] = this.value/100; renderAllShapes(); }});
+  document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) {if (ev.buttons === 1) { g_lightPos[1] = this.value/100; renderAllShapes(); }});
+  document.getElementById('lightSlideZ').addEventListener('mousemove', function(ev) {if (ev.buttons === 1) { g_lightPos[2] = this.value/100; renderAllShapes(); }});
+
 }
 
 function initTextures() {
@@ -570,6 +599,25 @@ function renderScene() {
 
   // Draw Maze
   drawMaze();
+
+  // Pass the lgith position to GLSL
+  gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+  
+  // Draw Light
+  var light = new Cube();
+  light.color = [2, 2, 0, 1];
+  light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+  light.matrix.scale(0.1, 0.1, 0.1);
+  light.matrix.translate(-0.5, -0.5, -0.5);
+  light.renderFast();
+
+  // Draw Sphere
+  var sphere = new Sphere();
+  sphere.color = [0.75, 0.75, 0.75, 1];
+  sphere.textureNum = -2;
+  if (g_normalOn) {sphere.textureNum = -3};
+  sphere.matrix.translate(-1, -1.5, -1.5);
+  sphere.render();
 
   renderAllShapes();
 

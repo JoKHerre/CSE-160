@@ -1,6 +1,5 @@
 // World.js
 // Jonathan Herrera
-
 var VSHADER_SOURCE = `
   precision mediump float;
   attribute vec4 a_Position;
@@ -10,12 +9,16 @@ var VSHADER_SOURCE = `
   varying vec3 v_Normal;
   varying vec4 v_VertPos;
   uniform mat4 u_ModelMatrix;
+  uniform mat4 u_NormalMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
   uniform mat4 u_ProjectionMatrix;
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
+
+    v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1.0)));
+
     v_Normal = a_Normal;
     v_VertPos = u_ModelMatrix * a_Position;
     }`
@@ -28,6 +31,8 @@ var FSHADER_SOURCE = `
   uniform vec4 u_FragColor;
   uniform vec3 u_lightPos;
   varying vec4 v_VertPos;
+  uniform vec3 u_cameraPos;
+  uniform bool u_lightOn;
 
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
@@ -57,13 +62,51 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);
     }
 
-    vec3 lightVector = vec3(v_VertPos) - u_lightPos;
+    // vec3 lightVector = vec3(v_VertPos) - u_lightPos;
+    vec3 lightVector = u_lightPos - vec3(v_VertPos);
     float r = length(lightVector);
-    if (r < 1.0) {
-      gl_FragColor = vec4(1,0,0,1);
-    } else if (r < 2.0) {
-      gl_FragColor = vec4(0,1,0,1);
+
+    // RED/GREEN VISUALIZATION
+    // if (r < 1.0) {
+    //   gl_FragColor = vec4(1,0,0,1);
+    // } else if (r < 2.0) {
+    //   gl_FragColor = vec4(0,1,0,1);
+    // }
+
+    // LIGHT FALLOFF VISUALIZATION
+    // gl_FragColor = vec4(vec3(gl_FragColor) / (r*r), 1);
+
+    // N DOT L
+    vec3 L = normalize(lightVector);
+    vec3 N = normalize(v_Normal);
+    float nDotL = max(dot(N,L), 0.0);
+
+
+    // gl_FragColor = gl_FragColor * nDotL;
+    // gl_FragColor.a = 1.0;
+
+    // Reflection
+    vec3 R = reflect(-L, N);
+
+    // Eye
+    vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
+
+    // Specular
+    float specular = pow(max(dot(E,R), 0.0), 64.0) * 0.8;
+
+    // vec3 diffuse = vec3(gl_FragColor * nDotL * 0.7);
+    vec3 diffuse = vec3(1.0,1.0,0.9) * vec3(gl_FragColor * nDotL * 0.7);
+
+    vec3 ambient = vec3(gl_FragColor * 0.3);
+
+    if (u_lightOn) {
+      if (u_whichTexture == 0) {
+        gl_FragColor = vec4(specular + diffuse + ambient, 1.0);
+      } else {
+        gl_FragColor = vec4(diffuse + ambient, 1.0);  
+      }
     }
+
   }`
 
 // Global Variables
@@ -81,7 +124,9 @@ let u_GlobalRotateMatrix;
 let g_mouseDown = false;
 let g_camera;
 let g_normalOn = true;
+let g_lightOn = true;
 let g_lightPos = [0, 1, -2];
+
 
 let u_whichTexture;
 let u_Sampler0;
@@ -167,10 +212,31 @@ function connectVariablesToGLSL() {
     return;
   }
 
+  // Get the storage location of u_cameraPos
+  u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
+  if (!u_cameraPos) {
+    console.log('Failed to get the storage location of u_cameraPos');
+    return;
+  }
+
+  // Get the storage location of u_lightOn
+  u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
+  if (!u_lightOn) {
+    console.log('Failed to get the storage location of u_lightOn');
+    return;
+  }
+
   // Get the storage location of u_ModelMatrix
   u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
   if (!u_ModelMatrix) {
     console.log('Failed to get the storage location of u_ModelMatrix');
+    return;
+  }
+
+  // Get the storage location of u_NormalMatrix
+  u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+  if (!u_NormalMatrix) {
+    console.log('Failed to get the storage location of u_NormalMatrix');
     return;
   }
 
@@ -281,6 +347,8 @@ function addActionsforHtmlUI() {
   document.getElementById('normalOn').onclick = function() {g_normalOn = true;}
   document.getElementById('normalOff').onclick = function() {g_normalOn = false;}
 
+  document.getElementById('lightOn').onclick = function() {g_lightOn = true;}
+  document.getElementById('lightOff').onclick = function() {g_lightOn = false;}
 
   document.getElementById('lightSlideX').addEventListener('mousemove', function(ev) {if (ev.buttons === 1) { g_lightPos[0] = this.value/100; renderAllShapes(); }});
   document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) {if (ev.buttons === 1) { g_lightPos[1] = this.value/100; renderAllShapes(); }});
@@ -364,11 +432,14 @@ function main() {
     }
   };
 
-  canvas.oncontextmenu = (ev) => ev.preventDefault();  
+  // canvas.oncontextmenu = (ev) => ev.preventDefault();  
 
-  canvas.onmousemove = function(ev) {
-    g_camera.panRight(ev.movementX * 0.2);
-    g_camera.lookUp(-ev.movementY * 0.2);
+  // If pointer is locked, then mouse movement will rotate the camera
+    if (document.pointerLockElement) {
+    canvas.onmousemove = function(ev) {
+      g_camera.panRight(ev.movementX * 0.2);
+      g_camera.lookUp(-ev.movementY * 0.2);
+    }
   }
 
   canvas.addEventListener("wheel", function(ev) {
@@ -466,6 +537,8 @@ function tick() {
 var g_shapesList = [];
 
 function updateAnimationAngles() {
+
+  g_lightPos[0] = Math.cos(g_seconds);
 
   if (g_pokeAnimation) {
     let time = g_seconds - g_pokeStartTime;
@@ -598,16 +671,22 @@ function renderScene() {
   }
 
   // Draw Maze
-  drawMaze();
+  // drawMaze();
 
-  // Pass the lgith position to GLSL
+  // Pass the light position to GLSL
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+
+  // Pass the camera position to GLSL
+  gl.uniform3f(u_cameraPos, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
   
+  // Pass the light status
+  gl.uniform1i(u_lightOn, g_lightOn);
+
   // Draw Light
   var light = new Cube();
   light.color = [2, 2, 0, 1];
   light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-  light.matrix.scale(0.1, 0.1, 0.1);
+  light.matrix.scale(-0.1, -0.1, -0.1);
   light.matrix.translate(-0.5, -0.5, -0.5);
   light.renderFast();
 
@@ -620,6 +699,15 @@ function renderScene() {
   sphere.render();
 
   renderAllShapes();
+
+  var teapot = new Model();
+  teapot.color = [0.0, 0.0, 1.0, 1.0];
+  teapot.textureNum = -2;
+  if (g_normalOn) {teapot.textureNum = -3};
+  teapot.matrix.setScale(0.5, 0.5, 0.5);
+  teapot.matrix.rotate(240, 0, 1, 0);
+  teapot.render(gl, program);
+
 
   var duration = performance.now() - startTime;
   sendTextToHTML("ms: " + Math.floor(duration) + " fps: " + Math.floor(1000/duration), "performance");
@@ -706,7 +794,7 @@ function renderAllShapes() {
   let lowerBody = new Cube();
   lowerBody.color = black;
   lowerBody.textureNum = -2;   
-  if (g_normalOn) {lowerBody.textureNum = -3};
+  if (g_normalOn) {lowerBody.textureNum = -3}
   lowerBody.matrix.setTranslate(-6.6, -0.85, -5.5);
   lowerBody.matrix.rotate(-90, 0,1,0);
   lowerBody.matrix.scale(0.5,0.5,0.5);
@@ -718,110 +806,148 @@ function renderAllShapes() {
   let bodyLocationMat = new Matrix4(lowerBody.matrix);
   lowerBody.matrix.translate(0.025,0,0.025);
   lowerBody.matrix.scale(0.55,0.7,0.4);
+  lowerBody.normalMatrix.setInverseOf(lowerBody.matrix).transpose();
+  lowerBody.renderFast();
 
   let lowerBodyWhite = new Cube();
   lowerBodyWhite.matrix = new Matrix4(lowerBody.matrix);
   lowerBodyWhite.color = white;
+  lowerBodyWhite.textureNum = -2;
+  if (g_normalOn) {lowerBodyWhite.textureNum = -3}
   lowerBodyWhite.matrix.scale(0.8,1.01,0.8);
   lowerBodyWhite.matrix.translate(0.1,-0.001,-0.001);
+  lowerBodyWhite.normalMatrix.setInverseOf(lowerBodyWhite.matrix).transpose();
   lowerBodyWhite.renderFast();
-  lowerBody.renderFast();
   
   let midBody = new Cube();
   midBody.color = black;
+  midBody.textureNum = -2;
+  if (g_normalOn) {midBody.textureNum = -3}
   midBody.matrix = new Matrix4(bodyLocationMat);
   midBody.matrix.translate(0.05,0.7,0.05);
   let midBodyLocationMat = new Matrix4(midBody.matrix);
   midBody.matrix.scale(0.5,0.15,0.35);
+  midBody.normalMatrix.setInverseOf(midBody.matrix).transpose();
   midBody.renderFast();
 
   let midBodyWhite = new Cube();
   midBodyWhite.matrix = new Matrix4(midBody.matrix);
   midBodyWhite.color = white;
+  midBodyWhite.textureNum = -2;
+  if (g_normalOn) {midBodyWhite.textureNum = -3}
   midBodyWhite.matrix.scale(0.8,1.01,0.8);
   midBodyWhite.matrix.translate(0.1,-0.001,-0.001);
+  midBodyWhite.normalMatrix.setInverseOf(midBodyWhite.matrix).transpose();
   midBodyWhite.renderFast();
-  midBody.renderFast();
 
   let upperBody = new Cube();
   upperBody.matrix = new Matrix4(midBodyLocationMat);
   upperBody.color = black;
+  upperBody.textureNum = -2;
+  if (g_normalOn) {upperBody.textureNum = -3}
   upperBody.matrix.translate(0.05, 0.15, 0.05);
   let upperBodyLocationMat = new Matrix4(upperBody.matrix);
   upperBody.matrix.scale(0.4,0.1,0.275)
+  upperBody.normalMatrix.setInverseOf(upperBody.matrix).transpose();
   upperBody.renderFast();
 
   let upperBodyWhite = new Cube();
   upperBodyWhite.matrix = new Matrix4(upperBody.matrix);
   upperBodyWhite.color = white;
+  upperBodyWhite.textureNum = -2;
+  if (g_normalOn) {upperBodyWhite.textureNum = -3}
   upperBodyWhite.matrix.scale(0.8,1.01,0.8);
   upperBodyWhite.matrix.translate(0.1,-0.001,-0.001);
+  upperBodyWhite.normalMatrix.setInverseOf(upperBodyWhite.matrix).transpose();
   upperBodyWhite.renderFast();
-  upperBody.renderFast();
 
   // Head
   let head = new Cube();
   head.color = black;
+  head.textureNum = -2;
+  if (g_normalOn) {head.textureNum = -3}
   head.matrix = new Matrix4(upperBodyLocationMat);
   head.matrix.translate(0.025, 0.1, 0.025);
   let headLocationMat = new Matrix4(head.matrix);
   head.matrix.scale(0.35,0.3,0.25);
+  head.normalMatrix.setInverseOf(head.matrix).transpose();
   head.renderFast();
   
   let upperBeak = new Cube();
   upperBeak.color = [1,0.6,0,1];
+  upperBeak.textureNum = -2;
+  if (g_normalOn) {upperBeak.textureNum = -3}
   upperBeak.matrix = new Matrix4(headLocationMat);
   upperBeak.matrix.translate(0.125, 0.1, -0.08);
   upperBeak.matrix.scale(0.1,0.08,0.1);
   upperBeak.matrix.rotate(45,45,0,1);
+  upperBeak.normalMatrix.setInverseOf(upperBeak.matrix).transpose();
   upperBeak.renderFast();
 
   let outerEyeRight = new Cube();
   outerEyeRight.color = [0,0,0,0];
+  outerEyeRight.textureNum = -2;
+  if (g_normalOn) {outerEyeRight.textureNum = -3}
   outerEyeRight.matrix = new Matrix4(headLocationMat);
   outerEyeRight.matrix.translate(0.025, 0.1, -0.01);
   let outerEyeRightLocationMat = new Matrix4(outerEyeRight.matrix);
   outerEyeRight.matrix.scale(0.08,0.1,0.025);
+  outerEyeRight.normalMatrix.setInverseOf(outerEyeRight.matrix).transpose();
   outerEyeRight.renderFast();
 
   let innerEyeRight = new Cube();
   innerEyeRight.color = [0,0,1,1];
+  innerEyeRight.textureNum = -2;
+  if (g_normalOn) {innerEyeRight.textureNum = -3}
   innerEyeRight.matrix = new Matrix4(outerEyeRightLocationMat);
   innerEyeRight.matrix.translate(0.015, 0, -0.01);
   innerEyeRight.matrix.scale(0.06,0.08,0.1);
+  innerEyeRight.normalMatrix.setInverseOf(innerEyeRight.matrix).transpose();
   innerEyeRight.renderFast();
 
   let outerEyeLeft = new Cube();
   outerEyeLeft.color = [0,0,0,0];
+  outerEyeLeft.textureNum = -2;
+  if (g_normalOn) {outerEyeLeft.textureNum = -3}
   outerEyeLeft.matrix = new Matrix4(headLocationMat);
   outerEyeLeft.matrix.translate(0.25, 0.1, -0.01);
   let outerEyeLeftLocationMat = new Matrix4(outerEyeLeft.matrix);
   outerEyeLeft.matrix.scale(0.08,0.1,0.025);
+  outerEyeLeft.normalMatrix.setInverseOf(outerEyeLeft.matrix).transpose();
   outerEyeLeft.renderFast();
 
   let innerEyeLeft = new Cube();
   innerEyeLeft.color = [0,0,1,1];
+  innerEyeLeft.textureNum = -2;
+  if (g_normalOn) {innerEyeLeft.textureNum = -3}
   innerEyeLeft.matrix = new Matrix4(outerEyeLeftLocationMat);
   innerEyeLeft.matrix.translate(0.015, 0, -0.01);
   innerEyeLeft.matrix.scale(0.06,0.08,0.1);
+  innerEyeLeft.normalMatrix.setInverseOf(innerEyeLeft.matrix).transpose();
   innerEyeLeft.renderFast();
 
   // left Wing
   let leftWing = new Cube();
   leftWing.color = black;
+  leftWing.textureNum = -2;
+  if (g_normalOn) {leftWing.textureNum = -3}
   leftWing.matrix = new Matrix4(midBodyLocationMat);
   leftWing.matrix.translate(0.1, 0.12, 0.1);
   leftWing.matrix.rotate(g_leftWingAngle1, 0,0,1);
-
+  leftWing.normalMatrix.setInverseOf(leftWing.matrix).transpose();
+  
   let wingMatrixLeft = new Matrix4(leftWing.matrix);
   leftWing.matrix.scale(0.05,0.3,0.2);
   leftWing.renderFast();
   
   let leftWing2 = new Cube();
   leftWing2.color = black;
+  leftWing2.textureNum = -2;
+  if (g_normalOn) {leftWing2.textureNum = -3}
   leftWing2.matrix = new Matrix4(wingMatrixLeft);
   leftWing2.matrix.translate(0,0.3,0);
   leftWing2.matrix.rotate(g_leftWingAngle2, 0,0,1);
+  leftWing2.normalMatrix.setInverseOf(leftWing2.matrix).transpose();
 
   let wingMatrixLeft2 = new Matrix4(leftWing2.matrix);
   leftWing2.matrix.scale(0.05,0.3,0.2);
@@ -829,6 +955,8 @@ function renderAllShapes() {
 
   let leftWingTip = new Pyramid();
   leftWingTip.color = black;
+  leftWingTip.textureNum = -2;
+  if (g_normalOn) {leftWingTip.textureNum = -3}
   leftWingTip.matrix = new Matrix4(wingMatrixLeft2);
   leftWingTip.matrix.translate(0,0.3,0);
   leftWingTip.matrix.scale(0.05,0.2,0.2);
@@ -838,9 +966,12 @@ function renderAllShapes() {
   // right Wing
   let rightWing = new Cube();
   rightWing.color = black;
+  rightWing.textureNum = -2;
+  if (g_normalOn) {rightWing.textureNum = -3}
   rightWing.matrix = new Matrix4(midBodyLocationMat);
   rightWing.matrix.translate(0.45, 0.14, 0.1);
   rightWing.matrix.rotate(g_rightWingAngle1, 0,0,1);
+  rightWing.normalMatrix.setInverseOf(rightWing.matrix).transpose();
 
   let wingMatrixRight = new Matrix4(rightWing.matrix);
   rightWing.matrix.scale(0.05,0.3,0.2);
@@ -848,9 +979,12 @@ function renderAllShapes() {
 
   let rightWing2 = new Cube();
   rightWing2.color = black;
+  rightWing2.textureNum = -2;
+  if (g_normalOn) {rightWing2.textureNum = -3}
   rightWing2.matrix = new Matrix4(wingMatrixRight);
   rightWing2.matrix.translate(0,0.3,0);
   rightWing2.matrix.rotate(g_rightWingAngle2, 0,0,1);
+  rightWing2.normalMatrix.setInverseOf(rightWing2.matrix).transpose();
 
   let wingMatrixRight2 = new Matrix4(rightWing2.matrix);
   rightWing2.matrix.scale(0.05,0.3,0.2);
@@ -858,6 +992,8 @@ function renderAllShapes() {
 
   let rightWingTip = new Pyramid();
   rightWingTip.color = black;
+  rightWingTip.textureNum = -2;
+  if (g_normalOn) {rightWingTip.textureNum = -3}
   rightWingTip.matrix = new Matrix4(wingMatrixRight2);
   rightWingTip.matrix.translate(0,0.3,0);
   rightWingTip.matrix.rotate(g_rightWingAngle3, 0,0,1);
@@ -867,10 +1003,12 @@ function renderAllShapes() {
   // Right Thigh
   let rightThigh = new Cube();
   rightThigh.color = [0.9,0.9,0.9,1];
+  rightThigh.textureNum = -2;
+  if (g_normalOn) {rightThigh.textureNum = -3}
   rightThigh.matrix = new Matrix4(bodyLocationMat);
   rightThigh.matrix.translate(0.1, -0.1 + g_rightLegOffsetY, 0.1 + g_rightLegOffsetZ);
-
   rightThigh.matrix.rotate(g_rightLegAngle1, 1,0,0);
+  rightThigh.normalMatrix.setInverseOf(rightThigh.matrix).transpose();
 
   let rightThighMatrix = new Matrix4(rightThigh.matrix);
   rightThigh.matrix.scale(0.175,0.15,0.2);
@@ -879,9 +1017,12 @@ function renderAllShapes() {
   // Right Calf
   let rightCalf = new Cube();
   rightCalf.color = [1,0.6,0,1];
+  rightCalf.textureNum = -2;
+  if (g_normalOn) {rightCalf.textureNum = -3}
   rightCalf.matrix = new Matrix4(rightThighMatrix);
   rightCalf.matrix.translate(0.035, -0.05, 0.05);
   rightCalf.matrix.rotate(g_rightLegAngle2,1,0,0);
+  rightCalf.normalMatrix.setInverseOf(rightCalf.matrix).transpose();
 
   let rightCalfMatrix = new Matrix4(rightCalf.matrix);
   rightCalf.matrix.scale(0.1,0.15,0.1);
@@ -890,18 +1031,24 @@ function renderAllShapes() {
   // Right Foot
   let rightFoot = new Cube();
   rightFoot.color = [1,0.6,0,1];
+  rightFoot.textureNum = -2;
+  if (g_normalOn) {rightFoot.textureNum = -3}
   rightFoot.matrix = new Matrix4(rightCalfMatrix);
   rightFoot.matrix.translate(-0.05, -0.03, -0.2);
   rightFoot.matrix.scale(0.2,0.05,0.3);
   rightFoot.matrix.rotate(g_rightLegAngle3, 1,0,0);
+  rightFoot.normalMatrix.setInverseOf(rightFoot.matrix).transpose();
   rightFoot.renderFast();
 
   // Left Thigh
   let leftThigh = new Cube();
   leftThigh.color = [0.9,0.9,0.9,1];
+  leftThigh.textureNum = -2;
+  if (g_normalOn) {leftThigh.textureNum = -3}
   leftThigh.matrix = new Matrix4(bodyLocationMat);
   leftThigh.matrix.translate(0.35, -0.1 + g_leftLegOffsetY, 0.1 + g_leftLegOffsetZ);
   leftThigh.matrix.rotate(g_leftLegAngle1, 1, 0, 0);
+  leftThigh.normalMatrix.setInverseOf(leftThigh.matrix).transpose();
 
   let leftThighMatrix = new Matrix4(leftThigh.matrix);
   leftThigh.matrix.scale(0.175,0.15,0.2);
@@ -910,9 +1057,12 @@ function renderAllShapes() {
   // Left Calf
   let leftCalf = new Cube();
   leftCalf.color = [1,0.6,0,1];
+  leftCalf.textureNum = -2;
+  if (g_normalOn) {leftCalf.textureNum = -3}
   leftCalf.matrix = new Matrix4(leftThighMatrix);
   leftCalf.matrix.translate(0.035, -0.05, 0.05);
   leftCalf.matrix.rotate(g_leftLegAngle2,1,0,0);
+  leftCalf.normalMatrix.setInverseOf(leftCalf.matrix).transpose();
 
   let leftCalfMatrix = new Matrix4(leftCalf.matrix);
   leftCalf.matrix.scale(0.1,0.15,0.1);
@@ -921,10 +1071,13 @@ function renderAllShapes() {
   // Left Foot
   let leftFoot = new Cube();
   leftFoot.color = [1,0.6,0,1];
+  leftFoot.textureNum = -2;
+  if (g_normalOn) {leftFoot.textureNum = -3}
   leftFoot.matrix = new Matrix4(leftCalfMatrix);
   leftFoot.matrix.translate(-0.05, -0.03, -0.2);
   leftFoot.matrix.scale(0.2,0.05,0.3);
   leftFoot.matrix.rotate(g_leftLegAngle3,1,0,0);
+  leftFoot.normalMatrix.setInverseOf(leftFoot.matrix).transpose();
   leftFoot.renderFast();
 }
 

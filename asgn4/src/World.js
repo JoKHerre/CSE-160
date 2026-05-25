@@ -112,16 +112,44 @@ var FSHADER_SOURCE = `
       }
     }
 
-    // SPOTLIGHT
-    vec3 spotLightVector = vec3(v_VertPos) - u_SpotlightPosition;
-    vec3 spotlightDir = normalize(spotlightVector);
-    float theta = dot(spotlightDir, normalize(-u_spotlightDirection));
+    // Direction from fragment TO spotlight
+    vec3 spotDir = normalize(u_spotlightPosition - vec3(v_VertPos));
 
-    if (u_lightOn && theta > u_spotlightCutoff) {
-      float spotDiffuseStrength = max(dot(N, normalize(-spotlightVector)), 0.0);
-      vec3 spotDiffuse = u_spotlightColor * vec3(gl_FragColor) * spotDiffuseStrength;
-      gl_FragColor.rgb += spotDiffuse;
+    // Compare against spotlight direction
+    float theta = dot(spotDir, normalize(-u_spotlightDirection));
+
+    // Soft edge for spotlight cone
+    float epsilon = 0.05;
+    float intensity = smoothstep(u_spotlightCutoff, u_spotlightCutoff + epsilon, theta);
+
+    // Spotlight diffuse
+    float spotDiffuseStrength = max(dot(N, spotDir), 0.0);
+
+    vec3 spotDiffuse = intensity * spotDiffuseStrength * u_spotlightColor * vec3(gl_FragColor);
+
+    // Spotlight specular
+    vec3 spotReflect = reflect(-spotDir, N);
+
+    float spotSpecular = pow(max(dot(E, spotReflect), 0.0), 32.0);
+
+    vec3 spotSpec = intensity * spotSpecular * u_spotlightColor * 0.6;
+
+    // Add spotlight contribution
+    if (u_lightOn) {
+      gl_FragColor.rgb += spotDiffuse + spotSpec;
     }
+
+    // // SPOTLIGHT
+    // // vec3 spotLightVector = vec3(v_VertPos) - u_spotlightPosition;
+    // vec3 spotLightVector = u_spotlightPosition - vec3(v_VertPos);
+    // vec3 spotlightDir = normalize(spotlightVector);
+    // float theta = dot(spotlightDir, normalize(-u_spotlightDirection));
+
+    // if (u_lightOn && theta > u_spotlightCutoff) {
+    //   float spotDiffuseStrength = max(dot(N, normalize(-spotlightVector)), 0.0);
+    //   vec3 spotDiffuse = u_spotlightColor * vec3(gl_FragColor) * spotDiffuseStrength;
+    //   gl_FragColor.rgb += spotDiffuse;
+    // }
 
   }`
 
@@ -147,8 +175,6 @@ let u_spotlightPosition;
 let u_spotlightDirection;
 let u_spotlightColor;
 let u_spotlightCutoff;
-let spotlightYaw = 45;
-let spotlightPitch = -40;
 
 let u_whichTexture;
 let u_Sampler0;
@@ -235,16 +261,16 @@ function connectVariablesToGLSL() {
   }
 
   // Get the storage location of u_spotlightPosition
-  u_spotlightPosition = gl.getUniformLocation(gl.program, 'u_SpotlightPosition');
+  u_spotlightPosition = gl.getUniformLocation(gl.program, 'u_spotlightPosition');
 
   // Get the storage location of u_spotlightDirection
-  u_spotlightDirection = gl.getUniformLocation(gl.program, 'u_SpotlightDirection');
+  u_spotlightDirection = gl.getUniformLocation(gl.program, 'u_spotlightDirection');
 
   // Get the storage location of u_spotlightColor
-  u_spotlightColor = gl.getUniformLocation(gl.program, 'u_SpotlightColor');
+  u_spotlightColor = gl.getUniformLocation(gl.program, 'u_spotlightColor');
 
   // Get the storage location of u_spotlightCutoff
-  u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_SpotlightCutoff');
+  u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_spotlightCutoff');
 
   // Get the storage location of u_cameraPos
   u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
@@ -731,7 +757,8 @@ function renderScene() {
 
   gl.uniform3f(u_spotlightColor, 1.0, 1.0, 0.9);
 
-  gl.uniform1f(u_spotlightCutoff, Math.cos(20 * Math.PI / 180) );
+  // gl.uniform1f(u_spotlightCutoff, Math.cos(20 * Math.PI / 180));
+  gl.uniform1f(u_spotlightCutoff, Math.cos(Math.PI / 4));
 
 
   // Draw Light

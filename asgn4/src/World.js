@@ -67,6 +67,8 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0);
     }
 
+    vec3 baseColor = vec3(gl_FragColor);
+
     // vec3 lightVector = vec3(v_VertPos) - u_lightPos;
     vec3 lightVector = u_lightPos - vec3(v_VertPos);
     float r = length(lightVector);
@@ -100,9 +102,11 @@ var FSHADER_SOURCE = `
     float specular = pow(max(dot(E,R), 0.0), 64.0) * 0.8;
 
     // vec3 diffuse = vec3(gl_FragColor * nDotL * 0.7);
-    vec3 diffuse = vec3(1.0,1.0,0.9) * vec3(gl_FragColor * nDotL * 0.7);
+    // vec3 diffuse = vec3(1.0,1.0,0.9) * vec3(gl_FragColor * nDotL * 0.7);
+    vec3 diffuse = vec3(1.0,1.0,0.9) * baseColor * nDotL * 0.7;
 
-    vec3 ambient = vec3(gl_FragColor * 0.3);
+    // vec3 ambient = vec3(gl_FragColor * 0.3);
+    vec3 ambient = baseColor * 0.3;
 
     if (u_lightOn) {
       if (u_whichTexture == 0) {
@@ -125,7 +129,8 @@ var FSHADER_SOURCE = `
     // Spotlight diffuse
     float spotDiffuseStrength = max(dot(N, spotDir), 0.0);
 
-    vec3 spotDiffuse = intensity * spotDiffuseStrength * u_spotlightColor * vec3(gl_FragColor);
+    // vec3 spotDiffuse = intensity * spotDiffuseStrength * u_spotlightColor * vec3(gl_FragColor);
+    vec3 spotDiffuse = intensity * spotDiffuseStrength * u_spotlightColor * baseColor;
 
     // Spotlight specular
     vec3 spotReflect = reflect(-spotDir, N);

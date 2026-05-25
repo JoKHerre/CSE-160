@@ -782,7 +782,6 @@ function renderScene() {
   // gl.uniform1f(u_spotlightCutoff, Math.cos(20 * Math.PI / 180));
   gl.uniform1f(u_spotlightCutoff, Math.cos(Math.PI / 4));
 
-
   // Draw Light
   var light = new Cube();
   light.color = [2, 2, 0, 1];
@@ -796,7 +795,7 @@ function renderScene() {
   sphere.color = [0.75, 0.75, 0.75, 1];
   sphere.textureNum = -2;
   if (g_normalOn) {sphere.textureNum = -3};
-  sphere.matrix.translate(-1, -1.5, -1.5);
+  sphere.matrix.translate(2, 1.5, -10);
   sphere.render();
 
   renderAllShapes();
@@ -807,6 +806,7 @@ function renderScene() {
     bunny.textureNum = -2;
   }
   bunny.matrix.setIdentity();
+  bunny.matrix.translate(-20, -0.5, -18);
   bunny.matrix.setScale(0.5, 0.5, 0.5);
   bunny.matrix.rotate(240, 0, 1, 0);
   bunny.render(gl);

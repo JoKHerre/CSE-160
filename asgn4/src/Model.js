@@ -1,26 +1,19 @@
-import { Matrix4 } from "../lib/cuon-matrix";
-
-// prettier-ignore
-export default class Model {
-    constructor(gl, filePath) {
-        console.log(filePath);
+class Model {
+    constructor(filePath) {
         this.filePath = filePath;
+        this.type = 'model';
         this.color = [1.0, 1.0, 1.0, 1.0];
         this.matrix = new Matrix4();
         this.isFullyLoaded = false;
+        this.modelData = null;
+        this.vertexBuffer = null;
+        this.normalBuffer = null;
 
-        this.getFileContent().then(() => {
-            this.vertexBuffer = gl.createBuffer();
-            this.normalBuffer = gl.createBuffer();
-
-            if (!this.vertexBuffer || !this.normalBuffer) {
-                console.log("Failed to create Buffers for", this.filePath);
-                return;
-            }
-        })
+        this.textureNum = -2;
+        this.getFileContent();
     }
 
-    parseModel(fileContent) {
+    async parseModel(fileContent) {
         const lines = fileContent.split("\n");
         // console.log(fileContent);
         // console.log(lines);
@@ -31,8 +24,8 @@ export default class Model {
         const unpackedNormals = [];
 
         for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const tokens = line.split(" ");
+            const line = lines[i].trim();
+            const tokens = line.split(/\s+/);
 
             if (tokens[0] == "v") {
                 allVertices.push(parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3]));
@@ -66,7 +59,19 @@ export default class Model {
         this.isFullyLoaded = true;
     }
 
-    render(gl, program) {
+    async getFileContent() {
+        try {
+            const response = await fetch(this.filePath);
+            if (!response.ok) throw new Error(`Could not load file "${this.filePath}". Are you sure the file name/path are correct?`);
+
+            const fileContent = await response.text();
+            await this.parseModel(fileContent);
+        } catch (e) {
+            console.error('Model load error', e);
+        }
+    }
+
+    render(program) {
         if (!this.isFullyLoaded) return;
         // vertices
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -89,18 +94,16 @@ export default class Model {
         normalMatrix.transpose();
         gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
         
+        gl.disableVertexAttribArray(a_UV);
+        gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
+        gl.uniform4f(u_FragColor, this.color[0], this.color[1], this.color[2], this.color[3]);
+        gl.uniform1f(u_TexColorWeight, 0.0);
+        gl.uniform1i(u_whichTexture, -1);
+
+        let normalMatrix = new Matrix4();
+        normalMatrix.setInverseOf(this.matrix);
+        normalMatrix.transpose();
+        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
         gl.drawArrays(gl.TRIANGLES, 0, this.modelData.vertices.length / 3);
     }
-
-    async getFileContent() {
-        try {
-            const response = await fetch(this.filePath);
-            if (!response.ok) throw new Error(`Could not load file "${this.filePath}". Are you sure the file name/path are correct?`);
-
-            const fileContent = await response.text();
-            this.parseModel(fileContent);
-        } catch (e) {
-            throw new Error(`Something went wrong when loading ${this.filePath}. Error: ${e}`);
-        }
-    }
-}

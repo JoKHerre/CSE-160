@@ -151,69 +151,7 @@ class Cube {
             initTriangle3D();
         }
 
-        // gl.bindBuffer(gl.ARRAY_BUFFER, g_vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, this.cubeVertices32, gl.DYNAMIC_DRAW);
-
-        // gl.bindBuffer(gl.ARRAY_BUFFER, g_vertexBuffer);
-        // gl.bufferData(gl.ARRAY_BUFFER, this.cubeVertices, gl.DYNAMIC_DRAW);
-        // gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
-        // gl.enableVertexAttribArray(a_Position);
-
-        // gl.bindBuffer(gl.ARRAY_BUFFER, g_uvBuffer);
-        // gl.bufferData(gl.ARRAY_BUFFER, this.uvVertices, gl.DYNAMIC_DRAW);
-        // gl.vertexAttribPointer(a_UV, 2, gl.FLOAT, false, 0, 0);
-        // gl.enableVertexAttribArray(a_UV);
-
-
-        // gl.drawArrays(gl.TRIANGLES, 0, 36);
-        // drawTriangle3DUV(this.cubeVertices, this.uvVertices, this.cubeVertices32, this.uvVertices32);
         drawTriangle3DUVNormal(this.cubeVertices, this.uvVertices, this.cubeVertices32, this.uvVertices32, this.normalVertices32);
-        
-
-        // var allVerts = [];
-
-        // // Top of cube
-        // allVerts = allVerts.concat([0,1,0, 0,1,1, 1,1,1]);
-        // allVerts = allVerts.concat([0,1,0, 1,1,1, 1,1,0]);
-
-        // // drawTriangle3DUV( [0,1,0, 0,1,1, 1,1,1], [0,0, 0,1, 1,1] );     
-        // // drawTriangle3DUV( [0,1,0, 1,1,1, 1,1,0], [0,0, 1,1, 1,0] );
-        
-        // // 4 Sides
-        // allVerts = allVerts.concat([0,0,0, 1,1,0, 1,0,0]);
-        // allVerts = allVerts.concat([0,0,0, 0,1,0, 1,1,0]);
-        // // gl.uniform4f(u_FragColor, rgba[0]*.9, rgba[1]*.9, rgba[2]*.9, rgba[3]);
-        // // drawTriangle3DUV([0,0,0, 1,1,0, 1,0,0], [0,0, 1,1, 1,0]);
-        // // drawTriangle3DUV( [0,0,0, 0,1,0, 1,1,0], [0,0, 0,1, 1,1]);
-
-        // allVerts = allVerts.concat([0,0,0, 0,0,1, 0,1,1]);
-        // allVerts = allVerts.concat([0,0,0, 0,1,0, 0,1,1]);
-        // // gl.uniform4f(u_FragColor, rgba[0]*.8, rgba[1]*.8, rgba[2]*.8, rgba[3]);
-        // // drawTriangle3DUV( [0,0,0, 0,0,1, 0,1,1], [0,0, 1,0, 1,1] );
-        // // drawTriangle3DUV( [0,0,0, 0,1,0, 0,1,1], [0,0, 0,1, 1,1] );
-
-        // allVerts = allVerts.concat([1,0,0, 1,0,1, 1,1,1]);
-        // allVerts = allVerts.concat([1,0,0, 1,1,0, 1,1,1]);
-        // // gl.uniform4f(u_FragColor, rgba[0]*.7, rgba[1]*.7, rgba[2]*.7, rgba[3]);
-        // // drawTriangle3DUV( [1,0,0, 1,0,1, 1,1,1], [0,0, 1,0, 1,1] );
-        // // drawTriangle3DUV( [1,0,0, 1,1,0, 1,1,1], [0,0, 0,1, 1,1]);
-
-
-        // allVerts = allVerts.concat([0,0,1, 1,0,1, 1,1,1]);
-        // allVerts = allVerts.concat([0,0,1, 0,1,1, 1,1,1]);
-        // // gl.uniform4f(u_FragColor, rgba[0]*.6, rgba[1]*.6, rgba[2]*.6, rgba[3]);
-        // // drawTriangle3DUV( [0,0,1, 1,0,1, 1,1,1], [0,0, 1,0, 1,1] );
-        // // drawTriangle3DUV( [0,0,1, 0,1,1, 1,1,1], [0,0, 0,1, 1,1] );
-
-
-        // // Bottom
-        // allVerts = allVerts.concat([0,0,0, 0,0,1, 1,0,1]);
-        // allVerts = allVerts.concat([0,0,0, 1,0,1, 1,0,0]);
-        // // gl.uniform4f(u_FragColor, rgba[0]*.5, rgba[1]*.5, rgba[2]*.5, rgba[3]);
-        // // drawTriangle3DUV( [0,0,0, 0,0,1, 1,0,1], [0,0, 0,1, 1,1] );
-        // // drawTriangle3DUV( [0,0,0, 1,0,1, 1,0,0], [0,0, 1,1, 1,0] );
-
-        // drawTriangle3D(allVerts);
-        // // drawTriangle3DUV(this.vertices, )
     }
 }

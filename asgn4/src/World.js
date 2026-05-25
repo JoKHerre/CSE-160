@@ -412,6 +412,13 @@ function main() {
     canvas.requestPointerLock();
   });
 
+  canvas.onmousemove = function(ev) {
+    if (document.pointerLockElement === canvas) {
+      g_camera.panRight(ev.movementX * 0.2);
+      g_camera.lookUp(-ev.movementY * 0.2);
+    }
+  }
+
   // Left Clicking, Right Clicking
   canvas.onmousedown = function(ev) {
 
@@ -433,13 +440,6 @@ function main() {
   };
 
   // canvas.oncontextmenu = (ev) => ev.preventDefault();  
-
-  // If pointer is locked, then mouse movement will rotate the camera
-    if (document.pointerLockElement) {
-    canvas.onmousemove = function(ev) {
-      g_camera.panRight(ev.movementX * 0.2);
-      g_camera.lookUp(-ev.movementY * 0.2);
-    }
   }
 
   canvas.addEventListener("wheel", function(ev) {

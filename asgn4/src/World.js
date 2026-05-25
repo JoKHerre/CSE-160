@@ -19,7 +19,7 @@ var VSHADER_SOURCE = `
 
     v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1.0)));
 
-    v_Normal = a_Normal;
+    // v_Normal = a_Normal;
     v_VertPos = u_ModelMatrix * a_Position;
     }`
 
@@ -33,6 +33,11 @@ var FSHADER_SOURCE = `
   varying vec4 v_VertPos;
   uniform vec3 u_cameraPos;
   uniform bool u_lightOn;
+
+  uniform vec3 u_spotlightPosition;
+  uniform vec3 u_spotlightDirection;
+  uniform vec3 u_spotlightColor;
+  uniform float u_spotlightCutoff;
 
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
@@ -107,6 +112,17 @@ var FSHADER_SOURCE = `
       }
     }
 
+    // SPOTLIGHT
+    vec3 spotLightVector = vec3(v_VertPos) - u_SpotlightPosition;
+    vec3 spotlightDir = normalize(spotlightVector);
+    float theta = dot(spotlightDir, normalize(-u_spotlightDirection));
+
+    if (u_lightOn && theta > u_spotlightCutoff) {
+      float spotDiffuseStrength = max(dot(N, normalize(-spotlightVector)), 0.0);
+      vec3 spotDiffuse = u_spotlightColor * vec3(gl_FragColor) * spotDiffuseStrength;
+      gl_FragColor.rgb += spotDiffuse;
+    }
+
   }`
 
 // Global Variables
@@ -127,6 +143,12 @@ let g_normalOn = true;
 let g_lightOn = true;
 let g_lightPos = [0, 1, -2];
 
+let u_spotlightPosition;
+let u_spotlightDirection;
+let u_spotlightColor;
+let u_spotlightCutoff;
+let spotlightYaw = 45;
+let spotlightPitch = -40;
 
 let u_whichTexture;
 let u_Sampler0;
@@ -211,6 +233,18 @@ function connectVariablesToGLSL() {
     console.log('Failed to get the storage location of u_lightPos');
     return;
   }
+
+  // Get the storage location of u_spotlightPosition
+  u_spotlightPosition = gl.getUniformLocation(gl.program, 'u_SpotlightPosition');
+
+  // Get the storage location of u_spotlightDirection
+  u_spotlightDirection = gl.getUniformLocation(gl.program, 'u_SpotlightDirection');
+
+  // Get the storage location of u_spotlightColor
+  u_spotlightColor = gl.getUniformLocation(gl.program, 'u_SpotlightColor');
+
+  // Get the storage location of u_spotlightCutoff
+  u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_SpotlightCutoff');
 
   // Get the storage location of u_cameraPos
   u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
@@ -681,6 +715,24 @@ function renderScene() {
   
   // Pass the light status
   gl.uniform1i(u_lightOn, g_lightOn);
+
+  // Pass the spotlight position
+  gl.uniform3f(u_spotlightPosition, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
+
+  let spotlightDir = [g_camera.at.elements[0] - g_camera.eye.elements[0], g_camera.at.elements[1] - g_camera.eye.elements[1], g_camera.at.elements[2] - g_camera.eye.elements[2]];
+
+  let len = Math.sqrt(spotlightDir[0] * spotlightDir[0] + spotlightDir[1] * spotlightDir[1] + spotlightDir[2] * spotlightDir[2]);
+
+  spotlightDir[0] /= len;
+  spotlightDir[1] /= len;
+  spotlightDir[2] /= len;
+
+  gl.uniform3f(u_spotlightDirection, spotlightDir[0], spotlightDir[1], spotlightDir[2]);
+
+  gl.uniform3f(u_spotlightColor, 1.0, 1.0, 0.9);
+
+  gl.uniform1f(u_spotlightCutoff, Math.cos(20 * Math.PI / 180) );
+
 
   // Draw Light
   var light = new Cube();

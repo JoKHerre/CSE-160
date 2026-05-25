@@ -1,22 +1,23 @@
 class Model {
-    constructor(filePath) {
+    constructor(gl, filePath) {
         this.filePath = filePath;
-        this.type = 'model';
         this.color = [1.0, 1.0, 1.0, 1.0];
         this.matrix = new Matrix4();
         this.isFullyLoaded = false;
-        this.modelData = null;
-        this.vertexBuffer = null;
-        this.normalBuffer = null;
-
         this.textureNum = -2;
-        this.getFileContent();
+        this.getFileContent().then(() => {
+            this.vertexBuffer = gl.createBuffer();
+            this.normalBuffer = gl.createBuffer(); 
+            
+            if (!this.vertexBuffer || !this.normalBuffer) {
+                console.error('Failed to create buffers for model');
+                return;
+            }
+        });
     }
 
     async parseModel(fileContent) {
         const lines = fileContent.split("\n");
-        // console.log(fileContent);
-        // console.log(lines);
         const allVertices = [];
         const allNormals = [];
 
@@ -71,39 +72,37 @@ class Model {
         }
     }
 
-    render(program) {
-        if (!this.isFullyLoaded) return;
-        // vertices
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, this.modelData.vertices, gl.DYNAMIC_DRAW);
-        gl.vertexAttribPointer(program.a_Position, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(program.a_Position);
+    render(gl) {
+    if (!this.isFullyLoaded) return;
 
-        // normals
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, this.modelData.normals, gl.DYNAMIC_DRAW);
-        gl.vertexAttribPointer(program.a_Normal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(program.a_Normal);
+    // OBJ has no UVs
+    gl.disableVertexAttribArray(a_UV);
 
-        // set uniforms
-        gl.uniformMatrix4fv(program.u_ModelMatrix, false, this.matrix.elements);
-        gl.uniform4fv(program.u_FragColor, this.color);
+    // vertices
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.modelData.vertices, gl.DYNAMIC_DRAW);
 
-        // normal matrix
-        let normalMatrix = new Matrix4().setInverseOf(this.matrix);
-        normalMatrix.transpose();
-        gl.uniformMatrix4fv(program.u_NormalMatrix, false, normalMatrix.elements);
-        
-        gl.disableVertexAttribArray(a_UV);
-        gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
-        gl.uniform4f(u_FragColor, this.color[0], this.color[1], this.color[2], this.color[3]);
-        gl.uniform1f(u_TexColorWeight, 0.0);
-        gl.uniform1i(u_whichTexture, -1);
+    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_Position);
 
-        let normalMatrix = new Matrix4();
-        normalMatrix.setInverseOf(this.matrix);
-        normalMatrix.transpose();
-        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+    // normals
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.modelData.normals, gl.DYNAMIC_DRAW);
 
-        gl.drawArrays(gl.TRIANGLES, 0, this.modelData.vertices.length / 3);
-    }
+    gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(a_Normal);
+
+    // uniforms
+    gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
+    gl.uniform4fv(u_FragColor, this.color);
+    gl.uniform1i(u_whichTexture, this.textureNum);
+
+    let normalMatrix = new Matrix4();
+    normalMatrix.setInverseOf(this.matrix);
+    normalMatrix.transpose();
+
+    gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
+    gl.drawArrays(gl.TRIANGLES, 0, this.modelData.vertices.length / 3);
+}
+}

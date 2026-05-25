@@ -172,6 +172,7 @@ let u_GlobalRotateMatrix;
 
 let g_mouseDown = false;
 let g_camera;
+let bunny;
 let g_normalOn = true;
 let g_lightOn = true;
 let g_lightPos = [0, 1, -2];
@@ -267,15 +268,31 @@ function connectVariablesToGLSL() {
 
   // Get the storage location of u_spotlightPosition
   u_spotlightPosition = gl.getUniformLocation(gl.program, 'u_spotlightPosition');
+  if (!u_spotlightPosition) {
+    console.log('Failed to get the storage location of u_spotlightPosition');
+    return;
+  }
 
   // Get the storage location of u_spotlightDirection
   u_spotlightDirection = gl.getUniformLocation(gl.program, 'u_spotlightDirection');
-
+  if (!u_spotlightDirection) {
+    console.log('Failed to get the storage location of u_spotlightDirection');
+    return;
+  }
+  
   // Get the storage location of u_spotlightColor
   u_spotlightColor = gl.getUniformLocation(gl.program, 'u_spotlightColor');
+  if (!u_spotlightColor) {
+    console.log('Failed to get the storage location of u_spotlightColor');
+    return;
+  }
 
   // Get the storage location of u_spotlightCutoff
   u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_spotlightCutoff');
+  if (!u_spotlightCutoff) {
+    console.log('Failed to get the storage location of u_spotlightCutoff');
+    return;
+  }
 
   // Get the storage location of u_cameraPos
   u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
@@ -464,6 +481,9 @@ function main() {
   setupWebGL();   
 
   g_camera = new Camera();
+  bunny = new Model(gl, "../model/bunny.obj");
+  bunny.color = [0.0, 0.0, 1.0, 1.0];
+  bunny.textureNum = -2;
   
   // Set up GLSL shader programs and connect GLSL variables
   connectVariablesToGLSL();
@@ -502,11 +522,8 @@ function main() {
     if (ev.button === 2) {
       placeBlock();
     }
-  };
-
-  // canvas.oncontextmenu = (ev) => ev.preventDefault();  
-  }
-
+  }; 
+  
   canvas.addEventListener("wheel", function(ev) {
     if (ev.deltaY < 0) {
       g_camera.zoomIn();
@@ -516,13 +533,13 @@ function main() {
   })
 
   document.onkeydown = keydown;
-
+  
   // Specify the color for clearing <canvas>
   gl.clearColor(0.2, 0.2, 0.2, 1.0);
   
   // Clear <canvas>
   // gl.clear(gl.COLOR_BUFFER_BIT);
-
+  
   // Render
   requestAnimationFrame(tick);
 }
@@ -736,7 +753,7 @@ function renderScene() {
   }
 
   // Draw Maze
-  // drawMaze();
+  drawMaze();
 
   // Pass the light position to GLSL
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
@@ -784,14 +801,15 @@ function renderScene() {
 
   renderAllShapes();
 
-  var teapot = new Model();
-  teapot.color = [0.0, 0.0, 1.0, 1.0];
-  teapot.textureNum = -2;
-  if (g_normalOn) {teapot.textureNum = -3};
-  teapot.matrix.setScale(0.5, 0.5, 0.5);
-  teapot.matrix.rotate(240, 0, 1, 0);
-  teapot.render(gl, program);
-
+  if (g_normalOn) {
+    bunny.textureNum = -3;
+  } else {
+    bunny.textureNum = -2;
+  }
+  bunny.matrix.setIdentity();
+  bunny.matrix.setScale(0.5, 0.5, 0.5);
+  bunny.matrix.rotate(240, 0, 1, 0);
+  bunny.render(gl);
 
   var duration = performance.now() - startTime;
   sendTextToHTML("ms: " + Math.floor(duration) + " fps: " + Math.floor(1000/duration), "performance");

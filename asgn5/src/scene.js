@@ -45,9 +45,15 @@ function main() {
     // const near = 0.1;
     const near = 0.00001;
     const far = 5;
+    // const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     // const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-    camera.position.z = 5;
+    // camera.position.z = 5;
+    camera.position.set(0, 6, 15);
+
+    // CONTROLS
+
+
 
     function updateCamera() {
         camera.updateProjectionMatrix();
@@ -64,6 +70,7 @@ function main() {
 
     // SCENE
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
     scene.add(cameraHelper);
     
 
@@ -73,7 +80,7 @@ function main() {
     const controls = new OrbitControls(
         camera,
         renderer.domElement
-    )
+    );
 
     // LIGHT
     const color = 0xFFFFFF;
@@ -81,6 +88,27 @@ function main() {
     const light = new THREE.DirectionalLight( color, intensity );
     light.position.set( -1, 2, 4 );
     scene.add( light );
+
+    // AMBIENT LIGHT
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    // SUN AND SUNLIGHT
+    const sunLight = new THREE.DirectionalLight(0xfff4d6, 3);
+    sunLight.position.set(20,30,20);
+    scene.add(sunLight);
+
+    const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    sun.position.copy(sunLight.position);
+
+    scene.add(sun);
+
+    // CAMPFIRE LIGHT
+    const fireLight = new THREE.PointLight(0xff6600, 30, 15);
+    fireLight.position.set(0, 1, 0);
+    scene.add(fireLight);
 
     // GEOMETRY
     const boxWidth = 1;
@@ -152,6 +180,7 @@ function main() {
             }
             objLoader.setMaterials(mtl);
         objLoader.load('../models/Campfire/PUSHILIN_campfire.obj', (root) => {
+            root.position.set(0, 0, 0);
             scene.add(root);
             // // compute the box that contains all the stuff
             // // from root and below
@@ -204,7 +233,9 @@ function main() {
     }
 
     function render( time ) {
-        // time *= 0.001;
+        time *= 0.001;
+
+        fireLight.intensity = 25 + Math.sin(time * 10) * 5;
 
         // cubes.forEach( ( cube, ndx ) => {
         //     const speed = 1 + ndx * .1;

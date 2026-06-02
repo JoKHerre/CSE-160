@@ -199,12 +199,13 @@ function main() {
     stump.position.set(-2, 0.2, -0.5);
     stump.castShadow = true;
     stump.receiveShadow = true;
-
     scene.add(stump);
+
     // TREES
     function createTree(x, z) {
+        const scale = 0.4 + Math.random() * 0.4;
         const trunk = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.25, 0.35, 2, 12),
+            new THREE.CylinderGeometry(0.25 * (scale*1), 0.35 * (scale*1.2), 2, 12),
             new THREE.MeshPhongMaterial({ color: 0x8b4513 })
         );
         trunk.position.set(x, 1, z);
@@ -213,31 +214,31 @@ function main() {
 
         const leafMaterial = new THREE.MeshPhongMaterial({color: 0x228b22});
         const cone1 = new THREE.Mesh(
-            new THREE.ConeGeometry(1.3, 2.2, 16),
+            new THREE.ConeGeometry(1.3*scale, 2.2*scale, 16),
             leafMaterial
         );
-        cone1.position.set(x, 2.3, z);
+        cone1.position.set(x, 4 - (1.2 / scale), z);
         cone1.castShadow = true;
         scene.add(cone1);
 
         const cone2 = new THREE.Mesh(
-            new THREE.ConeGeometry(1.0, 2.0, 16),
+            new THREE.ConeGeometry(1.0*scale, 2.0*scale, 16),
             leafMaterial
         );
-        cone2.position.set(x, 3.3, z);
+        cone2.position.set(x, 4.5 - (1.2 / scale), z);
         cone2.castShadow = true;
         scene.add(cone2);
 
         const cone3 = new THREE.Mesh(
-            new THREE.ConeGeometry(0.7, 1.6, 16),
+            new THREE.ConeGeometry(0.7*scale, 1.7*scale, 16),
             leafMaterial
         );
-        cone3.position.set(x, 4.2, z);
+        cone3.position.set(x, 5 - (1.2 / scale), z);
         cone3.castShadow = true;
         scene.add(cone3);
     }
 
-    const treeCount = 50;
+    const treeCount = 250;
 
     for (let i = 0; i < treeCount; i++) {
         let x, z;
@@ -245,8 +246,8 @@ function main() {
 
         while (!validPosition) {
 
-            x = Math.random() * 30 - 15;
-            z = Math.random() * 30 - 15;
+            x = Math.random() * 28 - 15;
+            z = Math.random() * 28 - 15;
 
             const distanceFromCenter = Math.sqrt(x * x + z * z);
 

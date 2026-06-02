@@ -10,7 +10,7 @@ import {EXRLoader} from 'three/addons/loaders/EXRLoader.js';
 // Campfire by Poly by Google [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0vzzmM-t8CP)
 // Tent by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0LnXUwcQzk)
 
-// OUTSIDE SOURCES
+// DOCUMENTATION NOT IN CANVAS
 // https://threejs.org/docs/#EXRLoader
 
 function main() {
@@ -50,10 +50,6 @@ function main() {
 			texture.colorSpace = THREE.SRGBColorSpace;
 			scene.background = texture;
 		} );
-
-    // AMBIENT LIGHT
-    // const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    // scene.add(ambientLight);
 
     // SUNLIGHT
     const sunLight = new THREE.DirectionalLight(0xf3e8a0, 6);
@@ -229,23 +225,6 @@ function main() {
         cone3.castShadow = true;
         scene.add(cone3);
     }
-    // function createTree(x,z) {
-    //     const trunk = 
-    //         new THREE.Mesh(
-    //             new THREE.CylinderGeometry(0.25,0.25,2),
-    //             new THREE.MeshPhongMaterial({color: 0x8b4513})
-    //         );
-    //     trunk.position.set(x,1,z);
-    //     scene.add(trunk);
-
-    //     const leaves =
-    //         new THREE.Mesh(
-    //             new THREE.SphereGeometry(1,16,16),
-    //             new THREE.MeshPhongMaterial({color: 0x228b22})
-    //         );
-    //     leaves.position.set(x,2.5,z);
-    //     scene.add(leaves); 
-    // }
 
     const treeCount = 50;
 
@@ -270,11 +249,6 @@ function main() {
 
         createTree(x, z);
     }
-
-    // createTree(-5, -5);
-    // createTree(5, -5);
-    // createTree(3.5, 4);
-    // createTree(5, 5);
 
     function resizeRendererToDisplaySize( renderer ) {
 		const canvas = renderer.domElement;

@@ -209,6 +209,7 @@ function main() {
     scene.add(stump);
 
     // TREES
+    const trees = [];
     function createTree(x, z) {
         const tree = new THREE.Group();
 
@@ -254,9 +255,11 @@ function main() {
         tree.userData.pickable = true;
 
         tree.add(trunk, cone1, cone2, cone3);
+        tree.userData.windOffset = Math.random() * 2;
 
         tree.position.set(x,0,z);
         scene.add(tree);
+        trees.push(tree);
     }
 
     const treeCount = 250;
@@ -360,6 +363,11 @@ function main() {
 
         fireLight.intensity = 40 + Math.random() * 5;
 
+        for (const tree of trees) {
+            tree.rotation.z = Math.sin(time * 0.8 + tree.userData.windOffset) * 0.03;
+            tree.rotation.x = Math.cos(time * 0.6 + tree.userData.windOffset) * 0.01;
+        }
+
         controls.update();
 
         renderer.render( scene, camera );
@@ -410,24 +418,10 @@ function main() {
         }
 
         let obj = hoveredObject;
-        // while (obj.parent && !obj.userData.isTree) {
-        //     obj = obj.parent;
-        // }
 
         while (obj.parent && (!obj.userData.pickable || obj.userData.isLeaf || obj.userData.isTrunk)) {
             obj = obj.parent;
         }
-
-
-        // TREES
-        // if (!obj.userData.isTree && !obj.userData.isLeaf && !obj.userData.isTrunk ) {
-        //     return;
-        // }
-
-        // ROCKS AND STUFF
-        // if ((!obj.userData.isRock) && (!obj.userData.isLog) && (!obj.userData.isStump)) {
-        //     return; 
-        // }
 
         // EVERYTHING
         if ((!obj.userData.isTree && !obj.userData.isLeaf && !obj.userData.isTrunk ) && (!obj.userData.isRock) && (!obj.userData.isLog) && (!obj.userData.isStump)) {

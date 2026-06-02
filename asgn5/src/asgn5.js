@@ -9,8 +9,8 @@ import {EXRLoader} from 'three/addons/loaders/EXRLoader.js';
 // Backpack by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/uRRsiIZKHG)
 // Campfire by Poly by Google [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0vzzmM-t8CP)
 // Tent by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0LnXUwcQzk)
-
 function main() {
+    
     // SCENE
     const scene = new THREE.Scene();
 
@@ -240,23 +240,17 @@ function main() {
     for (let i = 0; i < treeCount; i++) {
         let x, z;
         let validPosition = false;
-
         while (!validPosition) {
-
             x = Math.random() * 28 - 15;
             z = Math.random() * 28 - 15;
-
             const distanceFromCenter = Math.sqrt(x * x + z * z);
-
             if (distanceFromCenter < 6 || distanceFromCenter > 14) {
                 continue;
             }
-            
             if (Math.random() < distanceFromCenter / 15) {
                 validPosition = true;
             }
         }
-
         createTree(x, z);
     }
 
@@ -268,10 +262,34 @@ function main() {
 		if ( needResize ) {
 			renderer.setSize( width, height, false );
 		}
-
 		return needResize;
-
 	}
+
+    class PickHelper {
+        constructor() {
+            this.raycaster = new THREE.Raycaster();
+            this.pickedObject = null;
+            this.pickedObjectSavedColor = 0;
+        }
+        pick(normalizedPosition, scene, camera, time) {
+            if (this.pickedObject) {
+                this.pickedObject.material.emissive.setHex(this.pickedObjectSavedColor);
+                this.pickedObject = undefined;
+            }
+
+            this.raycaster.setFromCamera(normalizedPosition, camera);
+            const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+            if (intersectedObjects.length) {
+                this.pickedObject = intersectedObjects[0].object;
+                this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex();
+                this.pickedObject.material.emissive.setHex((time*8) % 2 > 1 ? 0xFFFF00 : 0xFF0000);
+            }
+        }
+    }
+
+    const pickPosition = { x: 0, y: 0 };
+    const pickHelper = new PickHelper();
+    clearPickPosition();
 
     const sunRadius = 20;
     const sunSpeed= 0.1;
@@ -284,6 +302,8 @@ function main() {
             camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
         }
+
+        pickHelper.pick(pickPosition, scene, camera, time);
 
         const angle = time * sunSpeed;
         sunLight.position.set(
@@ -303,6 +323,40 @@ function main() {
     }
 
     requestAnimationFrame( render );
+
+    function getCanvasRelativePosition( event ) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * canvas.width / rect.width,
+            y: (event.clientY - rect.top) * canvas.height / rect.height 
+        }
+    }
+
+    function setPickPosition( event ) {
+        const pos = getCanvasRelativePosition( event );
+        pickPosition.x = ( pos.x / canvas.width ) * 2 - 1;
+        pickPosition.y = ( pos.y / canvas.height ) * -2 + 1;
+    }
+
+    function clearPickPosition() {
+        pickPosition.x = -100000;
+        pickPosition.y = -100000;
+    }
+
+    window.addEventListener( 'mousemove', setPickPosition );
+    window.addEventListener( 'mouseout', clearPickPosition );
+    window.addEventListener( 'mouseleave', clearPickPosition );
+
+    window.addEventListener( 'touchstart', (event) => {
+        event.preventDefault();
+        setPickPosition(event.touches[0]);
+    }, { passive: false });
+
+    window.addEventListener( 'touchmove', (event) => {
+        setPickPosition(event.touches[0]);
+    });
+
+    window.addEventListener( 'touchend', clearPickPosition );
 }
 
 

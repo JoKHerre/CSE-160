@@ -66,7 +66,6 @@ function main() {
     sunLight.shadow.camera.top = 30;
     sunLight.shadow.camera.bottom = -30;
 
-
     scene.add(sunLight);
 
     // CAMPFIRE LIGHT
@@ -82,12 +81,35 @@ function main() {
     const hemisphereLight = new THREE.HemisphereLight(skyColor, groundColor, intensity);
     scene.add(hemisphereLight);
 
+    // MOONLIGHT
+    const moonLight = new THREE.DirectionalLight(0x99bbff, 0.5);
+    moonLight.castShadow = true;
+
+    moonLight.shadow.mapSize.width = 2048;
+    moonLight.shadow.mapSize.height = 2048;
+
+    moonLight.shadow.camera.near = 0.5;
+    moonLight.shadow.camera.far = 100;
+
+    moonLight.shadow.camera.left = -30;
+    moonLight.shadow.camera.right = 30;
+    moonLight.shadow.camera.top = 30;
+    moonLight.shadow.camera.bottom = -30;
+    scene.add(moonLight);
+
     // SUN
     const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
     const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffdd66 });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.position.copy(sunLight.position);
     scene.add(sun);
+
+    // MOON
+    const moonGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+    const moonMaterial = new THREE.MeshBasicMaterial({color: 0xddeeff});
+    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+    moon.position.copy(moonLight.position);
+    scene.add(moon);
 
     // GROUND
     const textureLoader = new THREE.TextureLoader();
@@ -359,9 +381,30 @@ function main() {
             0
         );
         sun.position.copy(sunLight.position);
-        sunLight.intensity = Math.max(0, sun.position.y / 5);
 
+        moonLight.position.set(
+            -Math.cos(angle) * sunRadius,
+            -Math.sin(angle) * sunRadius,
+            0
+        )
+        moon.position.copy(moonLight.position);
+
+        // DARKEN SKY AT NIGHT
+        const dayFactor = Math.max(0, sun.position.y / sunRadius);
+        hemisphereLight.intensity = 0.05 + dayFactor * 0.95;
+        renderer.setClearColor(new THREE.Color().lerpColors(new THREE.Color(0x000022), new THREE.Color(0x87ceeb), dayFactor));
+        
+        // SUNLIGHT INTENSITY BASED ON TIME OF DAY
+        const sunHeight = Math.max(0, sun.position.y);
+        sunLight.intensity = sunHeight / 5;
+
+        // MOONLIGHT INTENSITY BASED ON TIME OF NIGHT
+        const moonHeight = Math.max(0, moon.position.y);
+        moonLight.intensity = moonHeight / 20;
+
+        // CAMPFIRE LIGHT INTENSITY
         fireLight.intensity = 40 + Math.random() * 5;
+
 
         for (const tree of trees) {
             tree.rotation.z = Math.sin(time * 0.8 + tree.userData.windOffset) * 0.03;

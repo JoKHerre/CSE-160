@@ -3,6 +3,15 @@ import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
 import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {EXRLoader} from 'three/addons/loaders/EXRLoader.js';
+
+// ASSETS USED:
+// Backpack by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/uRRsiIZKHG)
+// Campfire by Poly by Google [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0vzzmM-t8CP)
+// Tent by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0LnXUwcQzk)
+
+// OUTSIDE SOURCES
+// https://threejs.org/docs/#EXRLoader
 
 function main() {
     // SCENE
@@ -143,6 +152,43 @@ function main() {
         0.5
     );
 
+    // LOG
+    const exrLoader = new EXRLoader();
+    const barkColor = textureLoader.load('../textures/pine_bark_diff_4k.jpg');
+    const barkDisp = textureLoader.load('../textures/pine_bark_disp_4k.png');
+    const barkNormal = exrLoader.load('../textures/pine_bark_nor_gl_4k.exr');
+    const barkRough = exrLoader.load('../textures/pine_bark_rough_4k.exr');
+    [barkColor, barkDisp, barkNormal, barkRough].forEach(tex => {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 2);
+    });
+    const barkMaterial = new THREE.MeshStandardMaterial({
+        map: barkColor,
+        normalMap: barkNormal,
+        roughnessMap: barkRough,
+        displacementMap: barkDisp,
+        roughness: 1.0,
+        displacementScale: 0.03
+    });
+    
+    const logGeometry = new THREE.CylinderGeometry(0.5, 0.6, 7, 64, 32);
+    const log = new THREE.Mesh(logGeometry, barkMaterial);
+    log.rotation.z = Math.PI / 2;
+    log.rotation.x = Math.PI / 3;
+    log.position.set(2, 0.4, 1);
+    log.castShadow = true;
+    log.receiveShadow = true;
+    scene.add(log);
+
+    // STUMP
+    const stumpGeometry = new THREE.CylinderGeometry(0.5, 0.6, 0.7, 24);
+    const stump = new THREE.Mesh(stumpGeometry, barkMaterial);
+    stump.position.set(-2, 0.35, -1);
+    stump.castShadow = true;
+    stump.receiveShadow = true;
+
+    scene.add(stump);
     // TREES
     function createTree(x, z) {
         // Trunk

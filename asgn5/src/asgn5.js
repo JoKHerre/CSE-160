@@ -32,6 +32,8 @@ function main() {
     const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     camera.position.set(35, 11, 35);
+    camera.layers.enable(0);
+    camera.layers.enable(1);
 
     // CONTROLS
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -99,6 +101,7 @@ function main() {
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI/2;
     ground.receiveShadow = true;
+    ground.layers.set(1);
     scene.add(ground);
 
     // MODEL LOADER
@@ -115,6 +118,7 @@ function main() {
                 root.rotation.y = rotationY;
                 root.rotation.z = rotationZ;
                 root.scale.set(scale, scale, scale);
+                // root.userData.isModelRoot = true;
                 root.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -156,11 +160,13 @@ function main() {
     const rockMaterial = new THREE.MeshStandardMaterial({color: 0x808080});
     const rockCount = 18;
     for (let i = 0; i < rockCount; i++) {
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial.clone());
         const angle = (i / rockCount) * Math.PI * 2;
         const radius = 0.5 + Math.random() * 0.1;
         rock.position.set(Math.cos(angle) * radius, 0.05, Math.sin(angle) * radius);
         rock.castShadow = true;
+        rock.userData.pickable = true;
+        rock.userData.isRock = true;
         scene.add(rock);
     }
 
@@ -182,12 +188,14 @@ function main() {
     });
     
     const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 64, 32);
-    const log = new THREE.Mesh(logGeometry, barkMaterial);
+    const log = new THREE.Mesh(logGeometry, barkMaterial.clone());
     log.rotation.z = Math.PI / 2;
     log.rotation.y = Math.PI / 3;
     log.position.set(2, 0.2, 1);
     log.castShadow = true;
     log.receiveShadow = true;
+    log.userData.pickable = true;
+    log.userData.isLog = true;
     scene.add(log);
 
     // STUMP
@@ -196,43 +204,59 @@ function main() {
     stump.position.set(-2, 0.2, -0.5);
     stump.castShadow = true;
     stump.receiveShadow = true;
+    stump.userData.pickable = true;
+    stump.userData.isStump = true;
     scene.add(stump);
 
     // TREES
     function createTree(x, z) {
+        const tree = new THREE.Group();
+
         const scale = 0.4 + Math.random() * 0.4;
         const trunk = new THREE.Mesh(
             new THREE.CylinderGeometry(0.25 * (scale*1), 0.35 * (scale*1.2), 2, 12),
             new THREE.MeshPhongMaterial({ color: 0x8b4513 })
         );
-        trunk.position.set(x, 1, z);
+        trunk.position.set(0, 1, 0);
         trunk.castShadow = true;
-        scene.add(trunk);
 
         const leafMaterial = new THREE.MeshPhongMaterial({color: 0x228b22});
         const cone1 = new THREE.Mesh(
             new THREE.ConeGeometry(1.3*scale, 2.2*scale, 16),
             leafMaterial
         );
-        cone1.position.set(x, 4 - (1.2 / scale), z);
+        cone1.position.set(0, 4 - (1.2 / scale), 0);
         cone1.castShadow = true;
-        scene.add(cone1);
 
         const cone2 = new THREE.Mesh(
             new THREE.ConeGeometry(1.0*scale, 2.0*scale, 16),
             leafMaterial
         );
-        cone2.position.set(x, 4.5 - (1.2 / scale), z);
+        cone2.position.set(0, 4.5 - (1.2 / scale), 0);
         cone2.castShadow = true;
-        scene.add(cone2);
 
         const cone3 = new THREE.Mesh(
             new THREE.ConeGeometry(0.7*scale, 1.7*scale, 16),
             leafMaterial
         );
-        cone3.position.set(x, 5 - (1.2 / scale), z);
+        cone3.position.set(0, 5 - (1.2 / scale), 0);
         cone3.castShadow = true;
-        scene.add(cone3);
+
+        trunk.userData.pickable = true;
+        cone1.userData.pickable = true;
+        cone2.userData.pickable = true;
+        cone3.userData.pickable = true;
+        trunk.userData.isTrunk = true;
+        cone1.userData.isLeaf = true;
+        cone2.userData.isLeaf = true;
+        cone3.userData.isLeaf = true;
+        tree.userData.isTree = true;
+        tree.userData.pickable = true;
+
+        tree.add(trunk, cone1, cone2, cone3);
+
+        tree.position.set(x,0,z);
+        scene.add(tree);
     }
 
     const treeCount = 250;
@@ -272,23 +296,42 @@ function main() {
             this.pickedObjectSavedColor = 0;
         }
         pick(normalizedPosition, scene, camera, time) {
+
             if (this.pickedObject) {
                 this.pickedObject.material.emissive.setHex(this.pickedObjectSavedColor);
                 this.pickedObject = undefined;
             }
-
+            
             this.raycaster.setFromCamera(normalizedPosition, camera);
-            const intersectedObjects = this.raycaster.intersectObjects(scene.children);
-            if (intersectedObjects.length) {
-                this.pickedObject = intersectedObjects[0].object;
-                this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex();
-                this.pickedObject.material.emissive.setHex((time*8) % 2 > 1 ? 0xFFFF00 : 0xFF0000);
+
+            const intersectedObjects = this.raycaster.intersectObjects(scene.children, true);
+            const pickableHit = intersectedObjects.find(i => {
+                let obj = i.object;
+                while (obj) {
+                    if (obj.userData.pickable) {
+                        return true;
+                    }
+                    obj = obj.parent;
+                }
+                return false;
+            });
+
+            if (!pickableHit) {
+                return;
             }
+             
+            this.pickedObject = pickableHit.object;
+            while (this.pickedObject.parent && !this.pickedObject.userData.pickable) {
+                this.pickedObject = this.pickedObject.parent;
+            }
+            this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex();
+            this.pickedObject.material.emissive.setHex(0xFFFF00);
         }
     }
-
+    
     const pickPosition = { x: 0, y: 0 };
     const pickHelper = new PickHelper();
+    let hoveredObject = null;
     clearPickPosition();
 
     const sunRadius = 20;
@@ -304,6 +347,7 @@ function main() {
         }
 
         pickHelper.pick(pickPosition, scene, camera, time);
+        hoveredObject = pickHelper.pickedObject;
 
         const angle = time * sunSpeed;
         sunLight.position.set(
@@ -325,6 +369,7 @@ function main() {
     requestAnimationFrame( render );
 
     function getCanvasRelativePosition( event ) {
+        const canvas = renderer.domElement;
         const rect = canvas.getBoundingClientRect();
         return {
             x: (event.clientX - rect.left) * canvas.width / rect.width,
@@ -333,6 +378,7 @@ function main() {
     }
 
     function setPickPosition( event ) {
+        const canvas = renderer.domElement;
         const pos = getCanvasRelativePosition( event );
         pickPosition.x = ( pos.x / canvas.width ) * 2 - 1;
         pickPosition.y = ( pos.y / canvas.height ) * -2 + 1;
@@ -357,6 +403,54 @@ function main() {
     });
 
     window.addEventListener( 'touchend', clearPickPosition );
+
+    window.addEventListener('click', (event) => {
+        if (!hoveredObject) {
+            return;
+        }
+
+        let obj = hoveredObject;
+        // while (obj.parent && !obj.userData.isTree) {
+        //     obj = obj.parent;
+        // }
+
+        while (obj.parent && (!obj.userData.pickable || obj.userData.isLeaf || obj.userData.isTrunk)) {
+            obj = obj.parent;
+        }
+
+
+        // TREES
+        // if (!obj.userData.isTree && !obj.userData.isLeaf && !obj.userData.isTrunk ) {
+        //     return;
+        // }
+
+        // ROCKS AND STUFF
+        // if ((!obj.userData.isRock) && (!obj.userData.isLog) && (!obj.userData.isStump)) {
+        //     return; 
+        // }
+
+        // EVERYTHING
+        if ((!obj.userData.isTree && !obj.userData.isLeaf && !obj.userData.isTrunk ) && (!obj.userData.isRock) && (!obj.userData.isLog) && (!obj.userData.isStump)) {
+            return; 
+        }
+
+        scene.remove(obj);
+
+        obj.traverse(child => {
+            if (child.geometry) {
+                child.geometry.dispose(); 
+            }
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+
+        hoveredObject = null;
+    });
 }
 
 

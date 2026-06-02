@@ -154,6 +154,19 @@ function main() {
         -Math.PI / 12
     );
 
+    // ROCKS AROUND CAMPFIRE
+    const rockGeometry = new THREE.DodecahedronGeometry(0.1, 0);
+    const rockMaterial = new THREE.MeshStandardMaterial({color: 0x808080});
+    const rockCount = 18;
+    for (let i = 0; i < rockCount; i++) {
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        const angle = (i / rockCount) * Math.PI * 2;
+        const radius = 0.5 + Math.random() * 0.1;
+        rock.position.set(Math.cos(angle) * radius, 0.05, Math.sin(angle) * radius);
+        rock.castShadow = true;
+        scene.add(rock);
+    }
+
     // LOG
     const exrLoader = new EXRLoader();
     const barkColor = textureLoader.load('../textures/pine_bark_diff_1k.jpg');

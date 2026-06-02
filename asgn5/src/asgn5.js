@@ -71,8 +71,8 @@ function main() {
     scene.add(sunLight);
 
     // CAMPFIRE LIGHT
-    const fireLight = new THREE.PointLight(0xff6600, 1, 0.5);
-    fireLight.position.set(0, 1, 0);
+    const fireLight = new THREE.PointLight(0xff6600, 1, 5);
+    fireLight.position.set(0, 2, 0);
     fireLight.castShadow = true;
     scene.add(fireLight);
 
@@ -105,7 +105,7 @@ function main() {
     scene.add(ground);
 
     // MODEL LOADER
-    function loadModel(objPath, mtlPath, position, scale) {
+    function loadModel(objPath, mtlPath, position, scale, rotationX=0, rotationY=0, rotationZ=0) {
         const objLoader = new OBJLoader();
         const mtlLoader = new MTLLoader();
 
@@ -114,6 +114,9 @@ function main() {
             objLoader.setMaterials(mtl);
             objLoader.load(objPath, (root) => {
                 root.position.copy(position);
+                root.rotation.x = rotationX;
+                root.rotation.y = rotationY;
+                root.rotation.z = rotationZ;
                 root.scale.set(scale, scale, scale);
                 root.traverse((child) => {
                     if (child.isMesh) {
@@ -144,50 +147,49 @@ function main() {
     loadModel(
         '../models/Backpack/Backpack.obj',
         '../models/Backpack/Backpack.mtl',
-        new THREE.Vector3(-2,0,1),
-        0.5
+        new THREE.Vector3(-1.2,0,-2),
+        0.5,
+        0,
+        Math.PI / 2,
+        -Math.PI / 12
     );
 
     // LOG
     const exrLoader = new EXRLoader();
-    const barkColor = textureLoader.load('../textures/pine_bark_diff_4k.jpg');
-    const barkDisp = textureLoader.load('../textures/pine_bark_disp_4k.png');
-    const barkNormal = exrLoader.load('../textures/pine_bark_nor_gl_4k.exr');
-    const barkRough = exrLoader.load('../textures/pine_bark_rough_4k.exr');
-    [barkColor, barkDisp, barkNormal, barkRough].forEach(tex => {
+    const barkColor = textureLoader.load('../textures/pine_bark_diff_1k.jpg');
+    const barkNormal = exrLoader.load('../textures/pine_bark_nor_gl_1k.exr');
+    const barkRough = exrLoader.load('../textures/pine_bark_rough_1k.exr');
+    [barkColor,  barkNormal, barkRough].forEach(tex => {
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1, 2);
+        tex.repeat.set(1, 1);
     });
     const barkMaterial = new THREE.MeshStandardMaterial({
         map: barkColor,
         normalMap: barkNormal,
         roughnessMap: barkRough,
-        displacementMap: barkDisp,
         roughness: 1.0,
-        displacementScale: 0.03
     });
     
-    const logGeometry = new THREE.CylinderGeometry(0.5, 0.6, 7, 64, 32);
+    const logGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 64, 32);
     const log = new THREE.Mesh(logGeometry, barkMaterial);
     log.rotation.z = Math.PI / 2;
-    log.rotation.x = Math.PI / 3;
-    log.position.set(2, 0.4, 1);
+    log.rotation.y = Math.PI / 3;
+    log.position.set(2, 0.2, 1);
     log.castShadow = true;
     log.receiveShadow = true;
     scene.add(log);
 
     // STUMP
-    const stumpGeometry = new THREE.CylinderGeometry(0.5, 0.6, 0.7, 24);
+    const stumpGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 24);
     const stump = new THREE.Mesh(stumpGeometry, barkMaterial);
-    stump.position.set(-2, 0.35, -1);
+    stump.position.set(-2, 0.2, -0.5);
     stump.castShadow = true;
     stump.receiveShadow = true;
 
     scene.add(stump);
     // TREES
     function createTree(x, z) {
-        // Trunk
         const trunk = new THREE.Mesh(
             new THREE.CylinderGeometry(0.25, 0.35, 2, 12),
             new THREE.MeshPhongMaterial({ color: 0x8b4513 })
@@ -197,8 +199,6 @@ function main() {
         scene.add(trunk);
 
         const leafMaterial = new THREE.MeshPhongMaterial({color: 0x228b22});
-
-        // Bottom cone
         const cone1 = new THREE.Mesh(
             new THREE.ConeGeometry(1.3, 2.2, 16),
             leafMaterial
@@ -207,7 +207,6 @@ function main() {
         cone1.castShadow = true;
         scene.add(cone1);
 
-        // Middle cone
         const cone2 = new THREE.Mesh(
             new THREE.ConeGeometry(1.0, 2.0, 16),
             leafMaterial
@@ -216,7 +215,6 @@ function main() {
         cone2.castShadow = true;
         scene.add(cone2);
 
-        // Top cone
         const cone3 = new THREE.Mesh(
             new THREE.ConeGeometry(0.7, 1.6, 16),
             leafMaterial
@@ -239,9 +237,10 @@ function main() {
 
             const distanceFromCenter = Math.sqrt(x * x + z * z);
 
-            if (distanceFromCenter < 6) continue;
-
-            // Prefer trees farther from center
+            if (distanceFromCenter < 6) {
+                continue;
+            }
+            
             if (Math.random() < distanceFromCenter / 15) {
                 validPosition = true;
             }
@@ -263,6 +262,9 @@ function main() {
 
 	}
 
+    const sunRadius = 20;
+    const sunSpeed= 0.1;
+
     function render( time ) {
         time *= 0.001;
 
@@ -272,9 +274,17 @@ function main() {
             camera.updateProjectionMatrix();
         }
 
-        fireLight.intensity = 20 + Math.random() * 3;
+        const angle = time * sunSpeed;
+        sunLight.position.set(
+            Math.cos(angle) * sunRadius,
+            Math.sin(angle) * sunRadius,
+            0
+        );
+        sun.position.copy(sunLight.position);
+        sunLight.intensity = Math.max(0, sun.position.y / 5);
 
-        // controls.target.set(0, 1, 0);
+        fireLight.intensity = 40 + Math.random() * 5;
+
         controls.update();
 
         renderer.render( scene, camera );

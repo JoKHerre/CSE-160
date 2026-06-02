@@ -10,9 +10,6 @@ import {EXRLoader} from 'three/addons/loaders/EXRLoader.js';
 // Campfire by Poly by Google [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0vzzmM-t8CP)
 // Tent by J-Toastie [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/0LnXUwcQzk)
 
-// DOCUMENTATION NOT IN CANVAS
-// https://threejs.org/docs/#EXRLoader
-
 function main() {
     // SCENE
     const scene = new THREE.Scene();
@@ -97,7 +94,7 @@ function main() {
     grassTexture.wrapS = THREE.RepeatWrapping;
     grassTexture.wrapT = THREE.RepeatWrapping;
     grassTexture.repeat.set(20, 20);
-    const groundGeometry = new THREE.PlaneGeometry(30, 30);
+    const groundGeometry = new THREE.CircleGeometry(16, 64);
     const groundMaterial = new THREE.MeshPhongMaterial( {map: grassTexture});
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI/2;
@@ -251,7 +248,7 @@ function main() {
 
             const distanceFromCenter = Math.sqrt(x * x + z * z);
 
-            if (distanceFromCenter < 6) {
+            if (distanceFromCenter < 6 || distanceFromCenter > 14) {
                 continue;
             }
             
